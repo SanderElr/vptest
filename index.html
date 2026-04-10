@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>ЗОНА 1988: ВЫЖИВАНИЕ v16.4</title>
+  <title>ЗОНА 1988: ВЫЖИВАНИЕ v16.5</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/SanderElr/vptest/main/favicon.png">
   <style>
@@ -13,6 +13,7 @@
     #auth-container { background: #1a1a1a; border: 1px solid #444; padding: 12px; }
     #user-info { display: none; margin-top: 10px; }
     #nick-input { background: #000; border: 1px solid #444; color: #6f6; width: 100%; padding: 5px; font-family: monospace; outline: none; }
+    
     .chat-box { background: #000; border: 1px solid #333; display: flex; flex-direction: column; flex-grow: 1; min-height: 300px; }
     #chat-messages { flex-grow: 1; overflow-y: auto; font-size: 12px; padding: 10px; border-bottom: 1px solid #222;}
     .chat-msg { margin-bottom: 8px; border-bottom: 1px solid #111; padding-bottom: 4px; word-break: break-word; }
@@ -33,14 +34,8 @@
     #log { flex-grow: 1; height: 160px; overflow-y: auto; background: #000; border: 1px solid #333; padding: 10px; font-size: 12px; color: #ccc; }
     
     .radio-img-box { 
-        width: 120px; 
-        height: 182px; 
-        background: #000; 
-        border: 1px solid #333; 
-        display: flex; 
-        align-items: center; 
-        justify-content: center;
-        overflow: hidden;
+        width: 120px; height: 182px; background: #000; border: 1px solid #333; 
+        display: flex; align-items: center; justify-content: center; overflow: hidden;
     }
     #radio-visual { width: 100%; height: 100%; object-fit: cover; opacity: 0.3; transition: all 0.3s; filter: grayscale(1); }
     .active-radio { opacity: 1.0 !important; filter: grayscale(0) !important; border-color: #6f6 !important; box-shadow: 0 0 15px rgba(0,255,0,0.4); }
@@ -53,18 +48,27 @@
     button:hover:not(:disabled) { background: #252525; border-color: #6f6; }
     button:disabled { opacity: 0.3; cursor: not-allowed; }
 
+    /* АРХИВ ЧАТА */
+    #archive-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; padding: 20px; box-sizing: border-box; }
+    .archive-content { max-width: 800px; margin: 0 auto; background: #111; border: 1px solid #444; height: 90vh; display: flex; flex-direction: column; }
+    .archive-header { padding: 15px; background: #222; border-bottom: 1px solid #444; display: flex; justify-content: space-between; align-items: center; }
+    #archive-list { flex-grow: 1; overflow-y: auto; padding: 20px; font-size: 14px; line-height: 1.6; }
+    .archive-entry { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #222; }
+    .archive-time { color: #555; font-size: 11px; margin-right: 10px; }
+    .archive-nick { color: #fd6; font-weight: bold; margin-right: 10px; }
+    .close-btn { background: #400; color: #fff; border: none; padding: 5px 15px; cursor: pointer; }
+
     .category-header { background: #1a1a1a; border: 1px solid #333; color: #f90; padding: 12px; margin-top: 8px; cursor: pointer; display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; }
-    .category-header:hover { background: #222; border-color: #f90; }
     .category-content { display: none; padding: 10px 0; grid-template-columns: 1fr 1fr; gap: 8px; }
     .category-content.active { display: grid; }
-    
-    .recipe-btn { border-color: #f90; color: #f90; font-size: 10px; line-height: 1.3; display: flex; flex-direction: column; }
-    .r-price { color: #888; font-size: 9px; }
-    .r-stats { color: #6f6; font-size: 9px; }
+    .recipe-btn { border-color: #f90; color: #f90; font-size: 10px; display: flex; flex-direction: column; }
+    .r-price, .r-stats { font-size: 9px; }
 
     .bad { color: #f66; font-weight: bold; } .good { color: #6f6; } .warn { color: #fd6; }
     .critical { border-color: #f44 !important; animation: blink 0.8s infinite; color: #f44 !important; }
     @keyframes blink { 50% { opacity: 0.3; } }
+    
+    .version-footer { text-align: center; color: #333; font-size: 10px; margin-top: 20px; padding: 10px; border-top: 1px solid #1a1a1a; text-transform: uppercase; letter-spacing: 1px; }
   </style>
 </head>
 <body>
@@ -85,11 +89,11 @@
           <button id="chat-send">▶</button>
         </div>
       </div>
+      <button onclick="openArchive()" style="width:100%; margin-top:5px; font-size:10px; text-align:center;">📜 ОТКРЫТЬ АРХИВ ЧАТА</button>
     </div>
 
     <div class="game-panel">
       <div class="loc-header"><span class="loc-name" id="cur-loc-name">Загрузка...</span></div>
-      
       <div class="stats-emoji" id="stats"></div>
       
       <div class="log-container">
@@ -109,20 +113,26 @@
       <div class="grid-2" id="move-actions"></div>
 
       <div id="crafting-section">
-        <div class="title">🛠️ МАСТЕРСКАЯ И КУХНЯ</div>
-        
-        <div class="category-header" onclick="toggleCategory('cat-cooking')">
-          <span>🍳 ГОТОВКА</span> <span id="arrow-cat-cooking">▼</span>
-        </div>
+        <div class="title">🛠️ МАСТЕРСКАЯ</div>
+        <div class="category-header" onclick="toggleCategory('cat-cooking')"><span>🍳 ГОТОВКА</span> <span id="arrow-cat-cooking">▼</span></div>
         <div id="cat-cooking" class="category-content"></div>
-
-        <div class="category-header" onclick="toggleCategory('cat-meds')">
-          <span>💊 МЕДИЦИНА</span> <span id="arrow-cat-meds">▼</span>
-        </div>
+        <div class="category-header" onclick="toggleCategory('cat-meds')"><span>💊 МЕДИЦИНА</span> <span id="arrow-cat-meds">▼</span></div>
         <div id="cat-meds" class="category-content"></div>
       </div>
       
       <button style="width:100%; margin-top:40px; background:#300; color:#f66; border:1px solid #600; text-align:center" onclick="resetGame()">[ НАЧАТЬ ЗАНОВО ]</button>
+      
+      <div class="version-footer">ЗОНА 1988: Build v16.5 // SanderElr</div>
+    </div>
+  </div>
+
+  <div id="archive-modal">
+    <div class="archive-content">
+        <div class="archive-header">
+            <span style="color:#6f6; font-weight:bold;">АРХИВ РАДИОПЕРЕГОВОРОВ</span>
+            <button class="close-btn" onclick="closeArchive()">[ ЗАКРЫТЬ ]</button>
+        </div>
+        <div id="archive-list"></div>
     </div>
   </div>
 
@@ -131,47 +141,21 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
   <script>
-    // Ссылка на твой репозиторий
     const RADIO_IMG_URL = "https://raw.githubusercontent.com/SanderElr/vptest/main/radio.png";
-
-    const RECIPES = [
-      { id: 'fried_fish', cat: 'cooking', n: '🍳 ЖАРЕНАЯ РЫБА', p: '1🐟 1🪵', s: '+50🍞 +10⚡', 
-        check: (s) => s.fish >= 1 && s.wood >= 1,
-        apply: (s) => { s.fish--; s.wood--; return { food: 50, energy: 10 }; } },
-      { id: 'fried_fish_herbs', cat: 'cooking', n: '🌿 РЫБА С ТРАВАМИ', p: '1🐟 1🌿 1🪵', s: '+55🍞 +20⚡ +15🧠', 
-        check: (s) => s.fish >= 1 && s.herbs >= 1 && s.wood >= 1,
-        apply: (s) => { s.fish--; s.herbs--; s.wood--; return { food: 55, energy: 20, psy: 15 }; } },
-      { id: 'rich_stew', cat: 'cooking', n: '🥘 РАГУ "ЗОНА"', p: '1🐟 1🌿 2🍄 1🪵', s: '+85🍞 +30❤️ +20⚡', 
-        check: (s) => s.fish >= 1 && s.herbs >= 1 && s.mushrooms >= 2 && s.wood >= 1,
-        apply: (s) => { s.fish--; s.herbs--; s.mushrooms -= 2; s.wood--; return { food: 85, hp: 30, energy: 20 }; } },
-      { id: 'mush_soup_herbs', cat: 'cooking', n: '🥣 ГРИБНОЙ СУП С ТРАВАМИ', p: '2🍄 1🌿 1💧 1🪵', s: '+60🍞 +20❤️ +10🧠', 
-        check: (s) => s.mushrooms >= 2 && s.herbs >= 1 && s.water_res >= 1 && s.wood >= 1,
-        apply: (s) => { s.mushrooms -= 2; s.herbs--; s.water_res--; s.wood--; return { food: 60, hp: 20, psy: 10 }; } },
-      { id: 'herb_berry_tea', cat: 'meds', n: '🍵 ОТВАР (ТРАВЫ + ЯГОДЫ)', p: '2🌿 2🍒 1💧 1🪵', s: '-30☢️ +20🧠 +30💧', 
-        check: (s) => s.herbs >= 2 && s.berries >= 2 && s.water_res >= 1 && s.wood >= 1,
-        apply: (s) => { s.herbs -= 2; s.berries -= 2; s.water_res--; s.wood--; return { rad: -30, psy: 20, water: 30 }; } },
-      { id: 'clean_bandages', cat: 'meds', n: '✨ ЧИСТЫЕ БИНТЫ', p: '2🧵 1💧 1🪵', s: '+40❤️', 
-        check: (s) => s.rags >= 2 && s.water_res >= 1 && s.wood >= 1,
-        apply: (s) => { s.rags -= 2; s.water_res--; s.wood--; return { hp: 40 }; } },
-      { id: 'herb_bandage', cat: 'meds', n: '🩹 ПОВЯЗКА С ТРАВАМИ', p: '1🧵 2🌿', s: '+25❤️ +5🧠', 
-        check: (s) => s.rags >= 1 && s.herbs >= 2,
-        apply: (s) => { s.rags--; s.herbs -= 2; return { hp: 25, psy: 5 }; } }
-    ];
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyBeCXQduKrz67Cs1SnqFFEktxAaaYNfFho",
-      authDomain: "vptest1-6a89d.firebaseapp.com",
-      projectId: "vptest1-6a89d",
-      appId: "1:452937918921:web:739b70ad20075896a1e018",
-    };
-
+    const firebaseConfig = { apiKey: "AIzaSyBeCXQduKrz67Cs1SnqFFEktxAaaYNfFho", authDomain: "vptest1-6a89d.firebaseapp.com", projectId: "vptest1-6a89d", appId: "1:452937918921:web:739b70ad20075896a1e018" };
+    
     firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
+    const auth = firebase.auth(), db = firebase.firestore();
     let currentUser = null, over = false, S = {}, chatUnsub = null;
     const $ = id => document.getElementById(id);
 
-    // Сбалансированный расход психики
+    const RECIPES = [
+      { id: 'fried_fish', cat: 'cooking', n: '🍳 ЖАРЕНАЯ РЫБА', p: '1🐟 1🪵', s: '+50🍞 +10⚡', check: (s) => s.fish >= 1 && s.wood >= 1, apply: (s) => { s.fish--; s.wood--; return { food: 50, energy: 10 }; } },
+      { id: 'rich_stew', cat: 'cooking', n: '🥘 РАГУ "ЗОНА"', p: '1🐟 1🌿 2🍄 1🪵', s: '+85🍞 +30❤️ +20⚡', check: (s) => s.fish >= 1 && s.herbs >= 1 && s.mushrooms >= 2 && s.wood >= 1, apply: (s) => { s.fish--; s.herbs--; s.mushrooms -= 2; s.wood--; return { food: 85, hp: 30, energy: 20 }; } },
+      { id: 'herb_berry_tea', cat: 'meds', n: '🍵 ОТВАР (АНТИРАД)', p: '2🌿 2🍒 1💧 1🪵', s: '-30☢️ +20🧠 +30💧', check: (s) => s.herbs >= 2 && s.berries >= 2 && s.water_res >= 1 && s.wood >= 1, apply: (s) => { s.herbs -= 2; s.berries -= 2; s.water_res--; s.wood--; return { rad: -30, psy: 20, water: 30 }; } },
+      { id: 'clean_bandages', cat: 'meds', n: '✨ ЧИСТЫЕ БИНТЫ', p: '2🧵 1💧 1🪵', s: '+40❤️', check: (s) => s.rags >= 2 && s.water_res >= 1 && s.wood >= 1, apply: (s) => { s.rags -= 2; s.water_res--; s.wood--; return { hp: 40 }; } }
+    ];
+
     const WORLD = {
       home: { n:'🏠 Убежище', rad:0, energy: 0, psy: 0, actions: ['rest', 'radio'] },
       city: { n:'🏙️ Город', rad:8, energy: 12, psy: 6, actions: ['city_slums', 'city_factory', 'city_hospital', 'city_shop'] },
@@ -190,119 +174,97 @@
       if (over) return;
       if (S.energy < eCost) { updateS('hp', -10); log("⚠ Изнеможение (-10 HP)", "bad"); }
       updateS('energy', -eCost);
-      if (S.psy < pCost) { updateS('hp', -12); log("⚠ Тяжелые мысли давят (-12 HP)", "bad"); }
+      if (S.psy < pCost) { updateS('hp', -12); log("⚠ Психоз (-12 HP)", "bad"); }
       updateS('psy', -pCost);
-
       let dmg = 0;
-      if (S.food <= 0) dmg += 5;
-      if (S.water <= 0) dmg += 8;
-      if (S.rad >= 85) dmg += 15;
-      if (S.psy <= 10) dmg += 5;
-      if (dmg > 0) { updateS('hp', -dmg); log(`⚠ Состояние критическое: -${dmg} HP`, "bad"); }
-    }
-
-    function toggleCategory(id) {
-        $(id).classList.toggle('active');
-        $('arrow-' + id).textContent = $(id).classList.contains('active') ? '▲' : '▼';
-    }
-
-    function moveTo(locId) {
-      if(over) return;
-      log(`➡️ Путь в ${WORLD[locId].n}...`, "warn");
-      updateS('food', -5); updateS('water', -5);
-      S.loc = locId;
-      updateS('rad', WORLD[locId].rad);
-      processSurvival(15, 6);
-      ui(); saveProgress();
+      if (S.food <= 0) dmg += 5; if (S.water <= 0) dmg += 8; if (S.rad >= 85) dmg += 15;
+      if (dmg > 0) { updateS('hp', -dmg); log(`⚠ Критическое состояние: -${dmg} HP`, "bad"); }
     }
 
     function doAction(act) {
       if(over) return;
-      
       if(act === 'radio') {
           if(S.batteries > 0) {
-              S.batteries--;
-              updateS('psy', 40);
-              log("📻 Связь установлена. Голоса в эфире дарят спокойствие... (+40 🧠)", "good");
+              S.batteries--; updateS('psy', 40);
+              log("📻 Связь установлена. Короткий миг надежды... (+40 🧠)", "good");
               $('radio-visual').classList.add('active-radio');
               setTimeout(() => $('radio-visual').classList.remove('active-radio'), 3000);
-          } else {
-              log("🚫 Рация мертва. Нужна батарейка 🔋", "bad");
-          }
+          } else { log("🚫 Рация мертва. Нужна батарейка 🔋", "bad"); }
           ui(); saveProgress(); return;
       }
-
-      let eCost = WORLD[S.loc].energy || 10;
-      let pCost = WORLD[S.loc].psy || 8;
+      let eCost = WORLD[S.loc].energy || 10, pCost = WORLD[S.loc].psy || 8;
       updateS('food', -3); updateS('water', -4);
-      
-      let m = ""; let r = Math.random();
-      if(act === 'city_slums') { 
-          if(r<0.4) {S.rags+=2; m="Нашел Тряпье (+2🧵)";} 
-          else if(r<0.6){S.batteries+=1; m="Нашел Батарейку (+1🔋)";}
-          else if(r<0.8){S.canned+=1; m="Нашел Тушенку (+1🥫)";} 
-      }
-      else if(act === 'city_factory') { 
-          if(r<0.5){S.scrap+=2; m="Нашел Хлам (+2⚙)";} 
-          else if(r<0.7){S.batteries+=1; m="Нашел Батарейку (+1🔋)";}
-          else if(r<0.9){S.wood+=2; m="Нашел Дрова (+2🪵)";} 
-      }
-      else if(act === 'city_hospital') { updateS('rad', 8); if(r<0.5){S.meds+=1; m="Нашел Аптечку (+1💊)";} }
-      else if(act === 'city_shop') { if(r<0.4){S.canned+=2; m="Нашел Еду (+2🥫)";} }
-      else if(act === 'get_wood_fast') { S.wood += 3; m = "Нарубил дров (+3🪵)"; }
-      else if(act === 'forest_search') { if(r<0.4){S.berries+=3; m="Нашел Ягоды (+3🍒)";} else if(r<0.7){S.mushrooms+=2; m="Нашел Грибы (+2🍄)";} }
-      else if(act === 'get_water') { S.water_res += 3; m="Набрал воды (+3💧)"; }
-      else if(act === 'fishing') { if(r<0.6){S.fish += 1; m="Улов: Рыба (+1🐟)";} }
-      else if(act === 'get_herbs') { S.herbs += 3; m="Собрал Травы (+3🌿)"; }
-      else if(act === 'get_berries') { S.berries += 3; m="Нашел Ягоды (+3🍒)"; }
-      
-      if(act === 'rest') { 
-          S.day++; updateS('energy', 100); updateS('psy', 40); updateS('hp', 25);
-          log("💤 Новый день. Сон пошел на пользу.", "good");
-          processSurvival(0, 0); ui(); saveProgress(); return; 
-      }
-
-      if(!m) m = "Ничего интересного.";
-      log(m + ` [⚡-${eCost} 🧠-${pCost}]`);
-      processSurvival(eCost, pCost); ui(); saveProgress();
+      let m = "", r = Math.random();
+      if(act==='city_slums'){ if(r<0.4){S.rags+=2; m="Тряпье (+2🧵)";} else if(r<0.6){S.batteries+=1; m="Батарейка (+1🔋)";} }
+      else if(act==='get_wood_fast'){ S.wood+=3; m="Нарубил дров (+3🪵)"; }
+      else if(act==='rest'){ S.day++; updateS('energy', 100); updateS('psy', 40); updateS('hp', 25); log("💤 Новый день.", "good"); ui(); saveProgress(); return; }
+      log(m || "Ничего не нашел."); processSurvival(eCost, pCost); ui(); saveProgress();
     }
 
-    function useItem(id) {
-      if(over || S[id] <= 0) return;
-      if(['wood', 'scrap', 'rags', 'batteries'].includes(id)) return;
-      S[id]--;
-      if(id === 'meds') { updateS('hp', 30); updateS('psy', 25); updateS('rad', -15); log("💊 Принял таблетки"); }
-      if(id === 'fish') { updateS('food', 20); updateS('rad', 15); updateS('hp', -10); log("🤢 Съел сырую рыбу"); }
-      if(id === 'mushrooms') { updateS('food', 12); updateS('rad', 10); log("🍄 Съел гриб"); }
-      if(id === 'berries') { updateS('food', 5); updateS('water', 5); updateS('energy', 3); log("🍒 Горсть ягод"); }
-      if(id === 'canned') { updateS('food', 100); updateS('psy', 10); log("🥫 Вкусная тушенка"); }
-      if(id === 'water_res') { updateS('water', 100); log("💧 Чистая вода"); }
-      ui(); saveProgress();
+    function moveTo(locId) {
+      if(over) return; log(`➡️ Иду в ${WORLD[locId].n}...`, "warn");
+      updateS('food', -5); updateS('water', -5); S.loc = locId; updateS('rad', WORLD[locId].rad);
+      processSurvival(15, 6); ui(); saveProgress();
+    }
+
+    function openArchive() {
+        $('archive-modal').style.display = 'block';
+        $('archive-list').innerHTML = 'Загрузка данных...';
+        db.collection('messages').orderBy('createdAt', 'desc').limit(100).get().then(snap => {
+            $('archive-list').innerHTML = '';
+            snap.forEach(doc => {
+                const m = doc.data(), d = m.createdAt ? m.createdAt.toDate().toLocaleString('ru-RU', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}) : '--:--';
+                $('archive-list').innerHTML += `<div class="archive-entry"><span class="archive-time">[${d}]</span><span class="archive-nick">${m.name || "Аноним"}:</span><span>${m.text}</span></div>`;
+            });
+        });
+    }
+    function closeArchive() { $('archive-modal').style.display = 'none'; }
+
+    function toggleCategory(id) { $(id).classList.toggle('active'); }
+    function log(m, t='info') { $('log').insertAdjacentHTML('afterbegin', `<div class="${t}">[День ${S.day}] ${m}</div>`); }
+    function saveProgress() { if(currentUser) db.collection('survival_v12').doc(currentUser.uid).set({S, over}); }
+    
+    async function loadProgress() {
+      const doc = await db.collection('survival_v12').doc(currentUser.uid).get();
+      if(doc.exists) { S = doc.data().S; over = doc.data().over || false; ui(); } else { initGame(); }
+    }
+
+    function initGame() {
+      S = { day:1, hp:100, food:80, water:80, energy:100, rad:0, psy:100, loc:'home', fish:0, mushrooms:0, berries:0, wood:5, water_res:2, herbs:0, scrap:0, rags:0, canned:1, meds:0, batteries:1 };
+      over = false; ui(); saveProgress();
+    }
+
+    function ui() {
+      const loc = WORLD[S.loc]; $('cur-loc-name').textContent = loc.n;
+      const st = [['❤️', S.hp], ['🍞', S.food], ['💧', S.water], ['⚡', S.energy], ['☢️', S.rad], ['🧠', S.psy], ['📅', S.day]];
+      $('stats').innerHTML = st.map(s => `<div class="s-item"><span>${s[0]}</span><span class="s-val">${s[1]}${s[0]==='📅'?'':'%'}</span></div>`).join('');
+      $('local-actions').innerHTML = loc.actions.map(a => `<button onclick="doAction('${a}')">${{rest:'💤 Сон', radio:'📻 Радио (🔋1)', city_slums:'🏙️ Трущобы', get_wood_fast:'🪓 Дрова'}[a] || a}</button>`).join('');
+      $('move-actions').innerHTML = Object.entries(WORLD).map(([id, data]) => `<button ${id===S.loc?'disabled':''} onclick="moveTo('${id}')">➡️ ${data.n}</button>`).join('');
+      
+      const invItems = [['canned','🥫'], ['water_res','💧'], ['berries','🍒'], ['fish','🐟'], ['mushrooms','🍄'], ['wood','🪵'], ['herbs','🌿'], ['scrap','⚙️'], ['rags','🧵'], ['meds','💊'], ['batteries','🔋']];
+      $('inventory').innerHTML = invItems.map(i => {
+          if(S[i[0]] <= 0) return '';
+          return `<span>${i[1]} ${S[i[0]]}</span>`;
+      }).join(' ');
+
+      $('cat-cooking').innerHTML = RECIPES.filter(r => r.cat === 'cooking').map(r => `<button class="recipe-btn" onclick="craft('${r.id}')"><span>${r.n}</span><span class="r-price">${r.p}</span></button>`).join('');
+      $('cat-meds').innerHTML = RECIPES.filter(r => r.cat === 'meds').map(r => `<button class="recipe-btn" onclick="craft('${r.id}')"><span>${r.n}</span><span class="r-price">${r.p}</span></button>`).join('');
     }
 
     function craft(recipeId) {
-        if(over) return;
         const recipe = RECIPES.find(r => r.id === recipeId);
         if (recipe && recipe.check(S)) {
             const effects = recipe.apply(S);
             for (let stat in effects) { updateS(stat, effects[stat]); }
             log(`🛠️ Скрафчено: ${recipe.n}`, "good");
             ui(); saveProgress();
-        } else { log("🚫 Недостаточно материалов", "bad"); }
+        } else { log("🚫 Недостаточно ресурсов", "bad"); }
     }
 
-    function startChat() {
-      if(chatUnsub) chatUnsub();
-      chatUnsub = db.collection('messages').orderBy('createdAt', 'asc').limitToLast(30).onSnapshot(snap => {
-        $('chat-messages').innerHTML = '';
-        snap.forEach(doc => {
-          const m = doc.data();
-          $('chat-messages').innerHTML += `<div class="chat-msg"><span class="chat-name">${m.name || "Аноним"}:</span> <span>${m.text}</span></div>`;
-        });
-        $('chat-messages').scrollTop = $('chat-messages').scrollHeight;
-      });
-    }
-
+    auth.onAuthStateChanged(user => { if(user){ currentUser=user; $('login-btn').style.display='none'; $('user-info').style.display='block'; loadProgress(); startChat(); } });
+    $('login-btn').onclick = () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+    function startChat() { db.collection('messages').orderBy('createdAt', 'asc').limitToLast(30).onSnapshot(snap => { $('chat-messages').innerHTML = ''; snap.forEach(doc => { const m = doc.data(); $('chat-messages').innerHTML += `<div class="chat-msg"><span class="chat-name">${m.name}:</span> <span>${m.text}</span></div>`; }); $('chat-messages').scrollTop = $('chat-messages').scrollHeight; }); }
+    
     async function sendMsg() {
       const txt = $('chat-input').value.trim();
       const nick = $('nick-input').value.trim() || currentUser.displayName.split(' ')[0];
@@ -310,69 +272,9 @@
       await db.collection('messages').add({ name: nick, text: txt, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
       $('chat-input').value = '';
     }
-
-    auth.onAuthStateChanged(user => { 
-      if (user) { 
-        currentUser = user; 
-        $('login-btn').style.display = 'none'; 
-        $('user-info').style.display = 'block'; 
-        $('nick-input').value = localStorage.getItem('zone_nick') || user.displayName.split(' ')[0];
-        loadProgress(); startChat(); 
-      } 
-    });
-
-    $('nick-input').onchange = (e) => localStorage.setItem('zone_nick', e.target.value);
-    $('login-btn').onclick = () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
     $('chat-send').onclick = sendMsg;
     $('chat-input').onkeypress = (e) => { if(e.key==='Enter') sendMsg(); };
-
-    async function saveProgress() { if(!currentUser) return; await db.collection('survival_v12').doc(currentUser.uid).set({S, over}); }
-    async function loadProgress() {
-      const doc = await db.collection('survival_v12').doc(currentUser.uid).get();
-      if(doc.exists) { S = doc.data().S; over = doc.data().over || false; ui(); } else { initGame(); }
-    }
-
-    async function initGame() {
-      S = { day:1, hp:100, food:80, water:80, energy:100, rad:0, psy:100, loc:'home', fish:0, mushrooms:0, berries:0, wood:5, water_res:2, herbs:0, scrap:0, rags:0, canned:1, meds:0, batteries:1 };
-      over = false; ui(); await saveProgress();
-    }
-
-    function resetGame() { if(confirm("Сбросить весь прогресс?")) initGame(); }
-    function log(m, t='info') { $('log').insertAdjacentHTML('afterbegin', `<div class="${t}">[День ${S.day}] ${m}</div>`); }
-
-    function ui() {
-      const loc = WORLD[S.loc];
-      $('cur-loc-name').textContent = loc.n;
-
-      const st = [['❤️', S.hp], ['🍞', S.food], ['💧', S.water], ['⚡', S.energy], ['☢️', S.rad], ['🧠', S.psy], ['📅', S.day]];
-      $('stats').innerHTML = st.map(s => {
-        let isCrit = (s[0]==='☢️') ? s[1] >= 85 : (s[1] <= 15 && s[0] !== '📅');
-        return `<div class="s-item ${isCrit ? 'critical' : ''}"><span>${s[0]}</span><span class="s-val">${s[1]}${s[0]==='📅'?'':'%'}</span></div>`;
-      }).join('');
-
-      const invItems = [['canned','🥫'], ['water_res','💧'], ['berries','🍒'], ['fish','🐟'], ['mushrooms','🍄'], ['wood','🪵'], ['herbs','🌿'], ['scrap','⚙️'], ['rags','🧵'], ['meds','💊'], ['batteries','🔋']];
-      $('inventory').innerHTML = invItems.map(i => {
-          if(S[i[0]] <= 0) return '';
-          let canUse = !['wood', 'scrap', 'rags', 'batteries'].includes(i[0]);
-          return `<span style="${canUse?'cursor:pointer;text-decoration:underline':''}" onclick="${canUse?`useItem('${i[0]}')`:'' }">${i[1]} ${S[i[0]]}</span>`;
-      }).join(' ');
-
-      const renderCat = (cat) => RECIPES.filter(r => r.cat === cat).map(r => `
-        <button class="recipe-btn" ${!r.check(S) || over ? 'disabled' : ''} onclick="craft('${r.id}')">
-          <span>${r.n}</span>
-          <span class="r-price">Цена: ${r.p}</span>
-          <span class="r-stats">Эффект: ${r.s}</span>
-        </button>
-      `).join('');
-
-      $('cat-cooking').innerHTML = renderCat('cooking');
-      $('cat-meds').innerHTML = renderCat('meds');
-
-      $('local-actions').innerHTML = loc.actions.map(a => `<button ${over?'disabled':''} onclick="doAction('${a}')">${{rest:'💤 Сон', radio:'📻 Радиосвязь (🔋1)', city_slums:'🏙️ Трущобы', city_factory:'🏭 Завод', city_hospital:'🏥 Больница', city_shop:'🏪 Магазин', get_wood_fast:'🪓 Дрова', forest_search:'🌲 Поиск', get_water:'🏺 Вода', fishing:'🎣 Рыбалка', get_herbs:'🌿 Травы', get_berries:'🍒 Ягоды'}[a]}</button>`).join('');
-      $('move-actions').innerHTML = Object.entries(WORLD).map(([id, data]) => `<button class="move-btn" ${id===S.loc||over?'disabled':''} onclick="moveTo('${id}')">➡️ ${data.n}</button>`).join('');
-      
-      if(over) $('local-actions').innerHTML = '<b class="bad" style="grid-column: 1/3; text-align: center; padding: 10px; border: 1px solid red;">ПОТРАЧЕНО.</b>';
-    }
+    $('nick-input').onchange = (e) => localStorage.setItem('zone_nick', e.target.value);
   </script>
 </body>
 </html>
