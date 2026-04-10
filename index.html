@@ -2,12 +2,13 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>ЗОНА 1988: ЭНЕРГИЯ v12.0</title>
+  <title>ЗОНА 1988: ВЫЖИВАНИЕ v16.2</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <style>
     body{background:#0a0a0a;color:#d4c4a8;font-family:monospace;margin:0;padding:10px;display:flex;justify-content:center}
     .container{display:grid;grid-template-columns:320px 1fr;gap:15px;max-width:1300px;width:100%}
     .sidebar{display:flex;flex-direction:column;gap:10px;height:95vh}
+    
     #auth-container { background: #1a1a1a; border: 1px solid #444; padding: 12px; }
     #user-info { display: none; margin-top: 10px; }
     #nick-input { background: #000; border: 1px solid #444; color: #6f6; width: 100%; padding: 5px; font-family: monospace; outline: none; }
@@ -19,7 +20,7 @@
     #chat-input { background: #000; border: none; color: #6f6; flex-grow: 1; padding: 12px; font-family: monospace; outline: none; }
     #chat-send { background: #222; border: none; color: #6f6; padding: 0 15px; cursor: pointer; }
 
-    .game-panel { background: #111; padding: 20px; border: 1px solid #444; overflow-y: auto; }
+    .game-panel { background: #111; padding: 20px; border: 1px solid #444; overflow-y: auto; height: 95vh; box-sizing: border-box; }
     .loc-header { background: #222; padding: 15px; border: 1px solid #444; text-align: center; margin-bottom: 15px; border-left: 5px solid #f44; }
     .loc-name { font-size: 20px; color: #fff; font-weight: bold; text-transform: uppercase; }
     
@@ -28,19 +29,26 @@
     .s-val { font-size: 11px; font-weight: bold; color: #fff; display: block;}
     
     #log { height: 160px; overflow-y: auto; background: #000; border: 1px solid #333; padding: 10px; font-size: 12px; margin-bottom: 15px; color: #ccc; }
-    .title { color: #555; border-bottom: 1px solid #333; margin: 15px 0 10px; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; }
+    .title { color: #555; border-bottom: 1px solid #333; margin: 25px 0 10px; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; }
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .inv-inline { background: #0a0a0a; padding: 10px; border: 1px solid #222; font-size: 12px; margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 12px; color: #6f6; }
     
-    button { background: #1a1a1a; color: #d4c4a8; border: 1px solid #444; padding: 12px; cursor: pointer; font-family: monospace; text-align: left; transition: 0.2s; }
+    button { background: #1a1a1a; color: #d4c4a8; border: 1px solid #444; padding: 12px; cursor: pointer; font-family: monospace; text-align: left; }
     button:hover:not(:disabled) { background: #252525; border-color: #6f6; }
     button:disabled { opacity: 0.3; cursor: not-allowed; }
-    .recipe-btn { border-color: #f90; color: #f90; font-size: 11px; }
-    .craft-btn { border-color: #0cf; color: #0cf; font-size: 11px; }
-    .bad { color: #f66; font-weight: bold; } .good { color: #6f6; } .warn { color: #fd6; }
+
+    .category-header { background: #1a1a1a; border: 1px solid #333; color: #f90; padding: 12px; margin-top: 8px; cursor: pointer; display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; }
+    .category-header:hover { background: #222; border-color: #f90; }
+    .category-content { display: none; padding: 10px 0; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .category-content.active { display: grid; }
     
-    .critical { border-color: #f44 !important; animation: blink 1s infinite; color: #f44 !important; }
-    @keyframes blink { 50% { opacity: 0.4; } }
+    .recipe-btn { border-color: #f90; color: #f90; font-size: 10px; line-height: 1.3; display: flex; flex-direction: column; }
+    .r-price { color: #888; font-size: 9px; }
+    .r-stats { color: #6f6; font-size: 9px; }
+
+    .bad { color: #f66; font-weight: bold; } .good { color: #6f6; } .warn { color: #fd6; }
+    .critical { border-color: #f44 !important; animation: blink 0.8s infinite; color: #f44 !important; }
+    @keyframes blink { 50% { opacity: 0.3; } }
   </style>
 </head>
 <body>
@@ -50,14 +58,14 @@
       <div id="auth-container">
         <button id="login-btn" style="width:100%">🔑 ВХОД GOOGLE</button>
         <div id="user-info">
-          <div style="font-size: 10px; color: #888;">ВАШ ПОЗЫВНОЙ:</div>
+          <div style="font-size: 10px; color: #888;">ПОЗЫВНОЙ:</div>
           <input type="text" id="nick-input" maxlength="15">
         </div>
       </div>
       <div class="chat-box">
         <div id="chat-messages"></div>
         <div class="chat-input-row">
-          <input type="text" id="chat-input" placeholder="Сказать..." maxlength="100">
+          <input type="text" id="chat-input" placeholder="Связь..." maxlength="100">
           <button id="chat-send">▶</button>
         </div>
       </div>
@@ -67,21 +75,33 @@
       <div class="loc-header"><span class="loc-name" id="cur-loc-name">Загрузка...</span></div>
       <div class="stats-emoji" id="stats"></div>
       <div id="log"></div>
-      <div class="title">🎒 ИНВЕНТАРЬ (Клик - съесть/использовать)</div>
+      
+      <div class="title">🎒 ИНВЕНТАРЬ</div>
       <div class="inv-inline" id="inventory"></div>
       
-      <div id="cooking-section">
-        <div class="title">🍳 КУХНЯ И ПИЩА (Нужны Дрова🪵 и Вода💧)</div>
-        <div class="grid-2" id="cooking-actions"></div>
-      </div>
-
-      <div class="title">📍 ДЕЙСТВИЯ (Тратят ⚡ Энергию)</div>
+      <div class="title">📍 ДЕЙСТВИЯ</div>
       <div class="grid-2" id="local-actions"></div>
 
-      <div class="title">🗺️ КАРТА ЗОНЫ</div>
+      <div class="title">🗺️ КАРТА ПЕРЕМЕЩЕНИЙ</div>
       <div class="grid-2" id="move-actions"></div>
+
+      <div id="crafting-section">
+        <div class="title">🛠️ МАСТЕРСКАЯ И КУХНЯ</div>
+        
+        <div class="category-header" onclick="toggleCategory('cat-cooking')">
+          <span>🍳 ГОТОВКА (Еда и супы)</span>
+          <span id="arrow-cat-cooking">▼</span>
+        </div>
+        <div id="cat-cooking" class="category-content"></div>
+
+        <div class="category-header" onclick="toggleCategory('cat-meds')">
+          <span>💊 МЕДИЦИНА (Отвары и бинты)</span>
+          <span id="arrow-cat-meds">▼</span>
+        </div>
+        <div id="cat-meds" class="category-content"></div>
+      </div>
       
-      <button style="width:100%; margin-top:20px; background:#300; color:#f66; border:1px solid #600; text-align:center" onclick="resetGame()">[ НАЧАТЬ ЗАНОВО ]</button>
+      <button style="width:100%; margin-top:40px; background:#300; color:#f66; border:1px solid #600; text-align:center" onclick="resetGame()">[ НАЧАТЬ ЗАНОВО ]</button>
     </div>
   </div>
 
@@ -90,6 +110,31 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
   <script>
+    // --- КОНФИГУРАЦИЯ РЕЦЕПТОВ (Сбалансированная психика) ---
+    const RECIPES = [
+      { id: 'fried_fish', cat: 'cooking', n: '🍳 ЖАРЕНАЯ РЫБА', p: '1🐟 1🪵', s: '+50🍞 +10⚡', 
+        check: (s) => s.fish >= 1 && s.wood >= 1,
+        apply: (s) => { s.fish--; s.wood--; return { food: 50, energy: 10 }; } },
+      { id: 'fried_fish_herbs', cat: 'cooking', n: '🌿 РЫБА С ТРАВАМИ', p: '1🐟 1🌿 1🪵', s: '+55🍞 +20⚡ +15🧠', 
+        check: (s) => s.fish >= 1 && s.herbs >= 1 && s.wood >= 1,
+        apply: (s) => { s.fish--; s.herbs--; s.wood--; return { food: 55, energy: 20, psy: 15 }; } },
+      { id: 'rich_stew', cat: 'cooking', n: '🥘 РАГУ "ЗОНА"', p: '1🐟 1🌿 2🍄 1🪵', s: '+85🍞 +30❤️ +20⚡', 
+        check: (s) => s.fish >= 1 && s.herbs >= 1 && s.mushrooms >= 2 && s.wood >= 1,
+        apply: (s) => { s.fish--; s.herbs--; s.mushrooms -= 2; s.wood--; return { food: 85, hp: 30, energy: 20 }; } },
+      { id: 'mush_soup_herbs', cat: 'cooking', n: '🥣 ГРИБНОЙ СУП С ТРАВАМИ', p: '2🍄 1🌿 1💧 1🪵', s: '+60🍞 +20❤️ +10🧠', 
+        check: (s) => s.mushrooms >= 2 && s.herbs >= 1 && s.water_res >= 1 && s.wood >= 1,
+        apply: (s) => { s.mushrooms -= 2; s.herbs--; s.water_res--; s.wood--; return { food: 60, hp: 20, psy: 10 }; } },
+      { id: 'herb_berry_tea', cat: 'meds', n: '🍵 ОТВАР (ТРАВЫ + ЯГОДЫ)', p: '2🌿 2🍒 1💧 1🪵', s: '-30☢️ +20🧠 +30💧', 
+        check: (s) => s.herbs >= 2 && s.berries >= 2 && s.water_res >= 1 && s.wood >= 1,
+        apply: (s) => { s.herbs -= 2; s.berries -= 2; s.water_res--; s.wood--; return { rad: -30, psy: 20, water: 30 }; } },
+      { id: 'clean_bandages', cat: 'meds', n: '✨ ЧИСТЫЕ БИНТЫ', p: '2🧵 1💧 1🪵', s: '+40❤️', 
+        check: (s) => s.rags >= 2 && s.water_res >= 1 && s.wood >= 1,
+        apply: (s) => { s.rags -= 2; s.water_res--; s.wood--; return { hp: 40 }; } },
+      { id: 'herb_bandage', cat: 'meds', n: '🩹 ПОВЯЗКА С ТРАВАМИ', p: '1🧵 2🌿', s: '+25❤️ +5🧠', 
+        check: (s) => s.rags >= 1 && s.herbs >= 2,
+        apply: (s) => { s.rags--; s.herbs -= 2; return { hp: 25, psy: 5 }; } }
+    ];
+
     const firebaseConfig = {
       apiKey: "AIzaSyBeCXQduKrz67Cs1SnqFFEktxAaaYNfFho",
       authDomain: "vptest1-6a89d.firebaseapp.com",
@@ -103,143 +148,124 @@
     let currentUser = null, over = false, S = {}, chatUnsub = null;
     const $ = id => document.getElementById(id);
 
+    // Расход психики уменьшен
     const WORLD = {
-      home: { n:'🏠 Убежище', rad:0, energy: 0, actions: ['rest'] },
-      city: { n:'🏙️ Город', rad:8, energy: 20, actions: ['city_slums', 'city_factory', 'city_hospital', 'city_shop'] },
-      forest: { n:'🌲 Лес', rad:5, energy: 15, actions: ['get_wood_fast', 'forest_search'] },
-      river: { n:'🌊 Берег', rad:2, energy: 15, actions: ['get_water', 'fishing'] },
-      swamp: { n:'🍄 Болото', rad:15, energy: 25, actions: ['get_herbs', 'get_berries'] }
+      home: { n:'🏠 Убежище', rad:0, energy: 0, psy: 0, actions: ['rest', 'radio'] },
+      city: { n:'🏙️ Город', rad:8, energy: 12, psy: 6, actions: ['city_slums', 'city_factory', 'city_hospital', 'city_shop'] },
+      forest: { n:'🌲 Лес', rad:5, energy: 10, psy: 5, actions: ['get_wood_fast', 'forest_search'] },
+      river: { n:'🌊 Берег', rad:2, energy: 8, psy: 3, actions: ['get_water', 'fishing'] },
+      swamp: { n:'🍄 Болото', rad:15, energy: 15, psy: 9, actions: ['get_herbs', 'get_berries'] }
     };
 
     function updateS(attr, delta) {
       if (over && attr !== 'hp') return; 
       S[attr] = Math.max(0, Math.min(100, (S[attr] || 0) + delta));
-      if (S.hp <= 0) { S.hp = 0; over = true; log("💀 Вы потеряли сознание и не пришли в себя.", "bad"); }
+      if (S.hp <= 0) { S.hp = 0; over = true; log("💀 Сознание погасло...", "bad"); }
     }
 
-    function processSurvival(eCost = 0) {
+    function processSurvival(eCost = 0, pCost = 0) {
       if (over) return;
-      
-      // Если действие требует энергии, а её нет — бьем по здоровью
-      if (S.energy < eCost) {
-          updateS('hp', -10);
-          log("⚠ Изнурение! Вы работаете на пределе сил (-10 HP)", "bad");
-      }
+      if (S.energy < eCost) { updateS('hp', -10); log("⚠ Изнеможение (-10 HP)", "bad"); }
       updateS('energy', -eCost);
+      if (S.psy < pCost) { updateS('hp', -12); log("⚠ Тяжелые мысли давят (-12 HP)", "bad"); }
+      updateS('psy', -pCost);
 
       let dmg = 0;
       if (S.food <= 0) dmg += 5;
       if (S.water <= 0) dmg += 8;
       if (S.rad >= 85) dmg += 15;
-      if (S.psy <= 10) dmg += 3;
-      if (dmg > 0) { updateS('hp', -dmg); log(`⚠ Состояние ухудшилось (-${dmg} HP)`, "bad"); }
+      if (S.psy <= 10) dmg += 5;
+      if (dmg > 0) { updateS('hp', -dmg); log(`⚠ Критическое состояние: -${dmg} HP`, "bad"); }
+    }
+
+    function toggleCategory(id) {
+        $(id).classList.toggle('active');
+        $('arrow-' + id).textContent = $(id).classList.contains('active') ? '▲' : '▼';
     }
 
     function moveTo(locId) {
       if(over) return;
-      const energyCost = 25;
-      log(`➡️ Переход в ${WORLD[locId].n}...`, "warn");
-      updateS('food', -10); 
-      updateS('water', -12);
+      log(`➡️ Путь в ${WORLD[locId].n}...`, "warn");
+      updateS('food', -5); updateS('water', -5);
       S.loc = locId;
       updateS('rad', WORLD[locId].rad);
-      processSurvival(energyCost); 
+      processSurvival(15, 6); // Расход психики на переход уменьшен
       ui(); saveProgress();
     }
 
     function doAction(act) {
       if(over) return;
-      let eCost = WORLD[S.loc].energy || 15;
-      updateS('food', -5); updateS('water', -7); updateS('psy', -3);
+      
+      if(act === 'radio') {
+          if(S.batteries > 0) {
+              S.batteries--;
+              updateS('psy', 40);
+              log("📻 Вышел в эфир. Голос с той стороны вселяет надежду... (+40 🧠)", "good");
+          } else {
+              log("🚫 Рация молчит. Нужна батарейка 🔋", "bad");
+          }
+          ui(); saveProgress(); return;
+      }
+
+      let eCost = WORLD[S.loc].energy || 10;
+      let pCost = WORLD[S.loc].psy || 8;
+      updateS('food', -3); updateS('water', -4);
       
       let m = ""; let r = Math.random();
-
-      if(act === 'city_slums') {
-          if(r < 0.5) { S.rags += 2; m = "В шкафах найдено Тряпье (+2🧵)"; }
-          else if(r < 0.7) { S.canned += 1; m = "Нашел старую тушенку (+1🥫)"; }
+      if(act === 'city_slums') { 
+          if(r<0.4) {S.rags+=2; m="Нашел Тряпье (+2🧵)";} 
+          else if(r<0.6){S.batteries+=1; m="Нашел Батарейку (+1🔋)";}
+          else if(r<0.8){S.canned+=1; m="Нашел Тушенку (+1🥫)";} 
       }
-      else if(act === 'city_factory') {
-          if(r < 0.6) { S.scrap += 2; m = "Нашел детали (+2⚙)"; }
-          else if(r < 0.8) { S.wood += 2; m = "Нашел доски (+2🪵)"; }
+      else if(act === 'city_factory') { 
+          if(r<0.5){S.scrap+=2; m="Нашел Хлам (+2⚙)";} 
+          else if(r<0.7){S.batteries+=1; m="Нашел Батарейку (+1🔋)";}
+          else if(r<0.9){S.wood+=2; m="Нашел Дрова (+2🪵)";} 
       }
-      else if(act === 'city_hospital') {
-          updateS('rad', 10);
-          if(r < 0.5) { S.meds += 1; m = "Нашел аптечку (+1💊)"; }
-      }
-      else if(act === 'city_shop') {
-          if(r < 0.4) { S.canned += 2; m = "Нашел запас еды (+2🥫)"; }
-      }
-      else if(act === 'get_wood_fast') { S.wood += 3; m = "Набрал дров (+3🪵)"; }
-      else if(act === 'forest_search') {
-          if(r < 0.4) { S.berries += 3; m = "Нашел ягоды (+3🍒)"; }
-          else if(r < 0.7) { S.mushrooms += 2; m = "Нашел грибы (+2🍄)"; }
-          else if(r < 0.9) { S.wood += 2; m = "Нашел сухие ветки (+2🪵)"; }
-      }
-      else if(act === 'get_water') { S.water_res += 3; m="Набрал мутной воды (+3💧)"; }
-      else if(act === 'fishing') { if(r<0.6){S.fish += 1; m="Поймал рыбу (+1🐟)";} }
-      else if(act === 'get_herbs') { S.herbs += 3; m="Собрал травы (+3🌿)"; }
-      else if(act === 'get_berries') { S.berries += 3; m="Собрал болотные ягоды (+3🍒)"; }
+      else if(act === 'city_hospital') { updateS('rad', 8); if(r<0.5){S.meds+=1; m="Нашел Аптечку (+1💊)";} }
+      else if(act === 'city_shop') { if(r<0.4){S.canned+=2; m="Нашел Еду (+2🥫)";} }
+      else if(act === 'get_wood_fast') { S.wood += 3; m = "Нарубил дров (+3🪵)"; }
+      else if(act === 'forest_search') { if(r<0.4){S.berries+=3; m="Нашел Ягоды (+3🍒)";} else if(r<0.7){S.mushrooms+=2; m="Нашел Грибы (+2🍄)";} }
+      else if(act === 'get_water') { S.water_res += 3; m="Набрал воды (+3💧)"; }
+      else if(act === 'fishing') { if(r<0.6){S.fish += 1; m="Улов: Рыба (+1🐟)";} }
+      else if(act === 'get_herbs') { S.herbs += 3; m="Собрал Травы (+3🌿)"; }
+      else if(act === 'get_berries') { S.berries += 3; m="Нашел Ягоды (+3🍒)"; }
       
       if(act === 'rest') { 
-          S.day++; updateS('energy', 100); updateS('psy', 50); updateS('hp', 15);
-          log("💤 Глубокий сон. Силы восстановлены (+100% ⚡)", "good");
-          processSurvival(0); ui(); saveProgress(); return; 
+          S.day++; updateS('energy', 100); updateS('psy', 40); updateS('hp', 25);
+          log("💤 Новый день. Сон немного подлечил раны.", "good");
+          processSurvival(0, 0); ui(); saveProgress(); return; 
       }
 
-      if(!m) m = "Поиск не принес результатов.";
-      log(m + ` [-${eCost} ⚡]`);
-      processSurvival(eCost); ui(); saveProgress();
+      if(!m) m = "Поиски пусты.";
+      log(m + ` [⚡-${eCost} 🧠-${pCost}]`);
+      processSurvival(eCost, pCost); ui(); saveProgress();
     }
 
-    // --- ИСПОЛЬЗОВАНИЕ ПРЕДМЕТОВ ---
     function useItem(id) {
       if(over || S[id] <= 0) return;
-      if(id === 'wood') return; // Дрова нельзя "использовать" кликом
-
+      if(['wood', 'scrap', 'rags', 'batteries'].includes(id)) return;
       S[id]--;
-      if(id === 'meds') { updateS('hp', 30); updateS('psy', 20); updateS('rad', -15); log("💊 Использовал медикаменты"); }
-      if(id === 'fish') { updateS('food', 20); updateS('rad', 15); updateS('hp', -10); log("🤢 Съел сырую рыбу (Опасно!)"); }
-      if(id === 'mushrooms') { updateS('food', 12); updateS('rad', 12); log("🍄 Съел сырой гриб"); }
-      if(id === 'berries') { updateS('food', 5); updateS('water', 5); updateS('energy', 2); log("🍒 Поел ягод"); }
-      if(id === 'canned') { updateS('food', 100); log("🥫 Питательно!"); }
-      if(id === 'water_res') { updateS('water', 100); log("💧 Жажда утолена"); }
+      if(id === 'meds') { updateS('hp', 30); updateS('psy', 25); updateS('rad', -15); log("💊 Принял медикаменты"); }
+      if(id === 'fish') { updateS('food', 20); updateS('rad', 15); updateS('hp', -10); log("🤢 Съел сырую рыбу. Плохо..."); }
+      if(id === 'mushrooms') { updateS('food', 12); updateS('rad', 10); log("🍄 Съел гриб"); }
+      if(id === 'berries') { updateS('food', 5); updateS('water', 5); updateS('energy', 3); log("🍒 Горсть ягод"); }
+      if(id === 'canned') { updateS('food', 100); updateS('psy', 10); log("🥫 Сытный обед из банки"); }
+      if(id === 'water_res') { updateS('water', 100); log("💧 Напился чистой воды"); }
       ui(); saveProgress();
     }
 
-    // --- КУХНЯ И КРАФТ ---
-    function craft(recipe) {
+    function craft(recipeId) {
         if(over) return;
-        let wood = S.wood || 0;
-        let water = S.water_res || 0;
-
-        if(recipe === 'soup_mush' && S.mushrooms >= 2 && water >= 1 && wood >= 1) {
-            S.mushrooms -= 2; S.water_res--; S.wood--;
-            updateS('food', 50); updateS('hp', 10); log("🍲 Грибной суп (+50 еда, +10 HP)", "good");
-        }
-        else if(recipe === 'compote' && S.berries >= 4 && water >= 1 && wood >= 1) {
-            S.berries -= 4; S.water_res--; S.wood--;
-            updateS('water', 60); updateS('energy', 25); log("🍹 Ягодный компот (+60 вода, +25 ⚡)", "good");
-        }
-        else if(recipe === 'fried_fish' && S.fish >= 1 && wood >= 1) {
-            S.fish--; S.wood--;
-            updateS('food', 50); updateS('hp', 5); log("🍳 Жареная рыба (+50 еда)", "good");
-        }
-        else if(recipe === 'energy_mix' && S.berries >= 2 && S.mushrooms >= 1 && S.herbs >= 1) {
-            S.berries -= 2; S.mushrooms--; S.herbs--;
-            updateS('energy', 40); updateS('psy', 15); log("🧪 Энерго-смесь (+40 ⚡, +15 Псих)", "good");
-        }
-        else if(recipe === 'herb_tea' && S.herbs >= 2 && water >= 1 && wood >= 1) {
-            S.herbs -= 2; S.water_res--; S.wood--;
-            updateS('rad', -25); updateS('psy', 10); log("🍵 Травяной чай (-25 Рад)", "good");
-        }
-        else {
-            log("🚫 Недостаточно ингредиентов!", "bad");
-            return;
-        }
-        ui(); saveProgress();
+        const recipe = RECIPES.find(r => r.id === recipeId);
+        if (recipe && recipe.check(S)) {
+            const effects = recipe.apply(S);
+            for (let stat in effects) { updateS(stat, effects[stat]); }
+            log(`🛠️ ${recipe.n} готов!`, "good");
+            ui(); saveProgress();
+        } else { log("🚫 Не хватает ингредиентов", "bad"); }
     }
 
-    // --- СИСТЕМНОЕ ---
     function startChat() {
       if(chatUnsub) chatUnsub();
       chatUnsub = db.collection('messages').orderBy('createdAt', 'asc').limitToLast(30).onSnapshot(snap => {
@@ -282,46 +308,44 @@
     }
 
     async function initGame() {
-      S = { day:1, hp:100, food:80, water:80, energy:100, rad:0, psy:100, loc:'home', fish:0, mushrooms:0, berries:0, wood:5, water_res:2, herbs:0, scrap:0, rags:0, canned:1, meds:0 };
+      S = { day:1, hp:100, food:80, water:80, energy:100, rad:0, psy:100, loc:'home', fish:0, mushrooms:0, berries:0, wood:5, water_res:2, herbs:0, scrap:0, rags:0, canned:1, meds:0, batteries:1 };
       over = false; ui(); await saveProgress();
     }
 
-    function resetGame() { if(confirm("Начать выживание с чистого листа?")) initGame(); }
+    function resetGame() { if(confirm("Сбросить весь прогресс?")) initGame(); }
     function log(m, t='info') { $('log').insertAdjacentHTML('afterbegin', `<div class="${t}">[День ${S.day}] ${m}</div>`); }
 
     function ui() {
       const loc = WORLD[S.loc];
       $('cur-loc-name').textContent = loc.n;
       const st = [['❤️', S.hp], ['🍞', S.food], ['💧', S.water], ['⚡', S.energy], ['☢️', S.rad], ['🧠', S.psy], ['📅', S.day]];
-      
       $('stats').innerHTML = st.map(s => {
-        let isCrit = false;
-        if(s[0]==='☢️') isCrit = s[1] >= 85;
-        else if(s[0]!=='📅') isCrit = s[1] <= 15;
+        let isCrit = (s[0]==='☢️') ? s[1] >= 85 : (s[1] <= 15 && s[0] !== '📅');
         return `<div class="s-item ${isCrit ? 'critical' : ''}"><span>${s[0]}</span><span class="s-val">${s[1]}${s[0]==='📅'?'':'%'}</span></div>`;
       }).join('');
 
-      const invItems = [['canned','🥫'], ['water_res','💧'], ['berries','🍒'], ['fish','🐟'], ['mushrooms','🍄'], ['wood','🪵'], ['herbs','🌿'], ['scrap','⚙️'], ['rags','🧵'], ['meds','💊']];
+      const invItems = [['canned','🥫'], ['water_res','💧'], ['berries','🍒'], ['fish','🐟'], ['mushrooms','🍄'], ['wood','🪵'], ['herbs','🌿'], ['scrap','⚙️'], ['rags','🧵'], ['meds','💊'], ['batteries','🔋']];
       $('inventory').innerHTML = invItems.map(i => {
           if(S[i[0]] <= 0) return '';
-          let canClick = i[0] !== 'wood' && i[0] !== 'scrap' && i[0] !== 'rags';
-          return `<span style="${canClick?'cursor:pointer;text-decoration:underline':''}" onclick="${canClick?`useItem('${i[0]}')`:'' }">${i[1]} ${S[i[0]]}</span>`;
+          let canUse = !['wood', 'scrap', 'rags', 'batteries'].includes(i[0]);
+          return `<span style="${canUse?'cursor:pointer;text-decoration:underline':''}" onclick="${canUse?`useItem('${i[0]}')`:'' }">${i[1]} ${S[i[0]]}</span>`;
       }).join(' ');
 
-      // Секция готовки
-      let cookHtml = "";
-      if(S.mushrooms >= 2) cookHtml += `<button class="recipe-btn" onclick="craft('soup_mush')">🍲 Суп (2🍄+1💧+1🪵)</button>`;
-      if(S.berries >= 4) cookHtml += `<button class="recipe-btn" onclick="craft('compote')">🍹 Компот (4🍒+1💧+1🪵)</button>`;
-      if(S.fish >= 1) cookHtml += `<button class="recipe-btn" onclick="craft('fried_fish')">🍳 Жареная рыба (1🐟+1🪵)</button>`;
-      if(S.herbs >= 2) cookHtml += `<button class="recipe-btn" onclick="craft('herb_tea')">🍵 Чай (2🌿+1💧+1🪵)</button>`;
-      if(S.berries >= 2 && S.mushrooms >= 1) cookHtml += `<button class="recipe-btn" onclick="craft('energy_mix')">🧪 Энерго-микс (2🍒+1🍄+1🌿)</button>`;
-      $('cooking-actions').innerHTML = cookHtml || "<div style='font-size:10px; color:#555'>Нет ингредиентов для готовки</div>";
+      const renderCat = (cat) => RECIPES.filter(r => r.cat === cat).map(r => `
+        <button class="recipe-btn" ${!r.check(S) || over ? 'disabled' : ''} onclick="craft('${r.id}')">
+          <span>${r.n}</span>
+          <span class="r-price">Цена: ${r.p}</span>
+          <span class="r-stats">Эффект: ${r.s}</span>
+        </button>
+      `).join('');
 
-      const actNames = {rest:'💤 Сон (Сброс дня)', city_slums:'🏙️ Трущобы', city_factory:'🏭 Завод', city_hospital:'🏥 Больница', city_shop:'🏪 Магазин', get_wood_fast:'🪓 Сбор дров', forest_search:'🌲 Поиск в чаще', get_water:'🏺 Набор воды', fishing:'🎣 Рыбалка', get_herbs:'🌿 Сбор трав', get_berries:'🍒 Сбор ягод'};
-      $('local-actions').innerHTML = loc.actions.map(a => `<button ${over?'disabled':''} onclick="doAction('${a}')">${actNames[a]}</button>`).join('');
+      $('cat-cooking').innerHTML = renderCat('cooking');
+      $('cat-meds').innerHTML = renderCat('meds');
+
+      $('local-actions').innerHTML = loc.actions.map(a => `<button ${over?'disabled':''} onclick="doAction('${a}')">${{rest:'💤 Сон', radio:'📻 Радиосвязь (🔋1)', city_slums:'🏙️ Трущобы', city_factory:'🏭 Завод', city_hospital:'🏥 Больница', city_shop:'🏪 Магазин', get_wood_fast:'🪓 Дрова', forest_search:'🌲 Поиск', get_water:'🏺 Вода', fishing:'🎣 Рыбалка', get_herbs:'🌿 Травы', get_berries:'🍒 Ягоды'}[a]}</button>`).join('');
       $('move-actions').innerHTML = Object.entries(WORLD).map(([id, data]) => `<button class="move-btn" ${id===S.loc||over?'disabled':''} onclick="moveTo('${id}')">➡️ ${data.n}</button>`).join('');
       
-      if(over) $('local-actions').innerHTML = '<b class="bad" style="grid-column: 1/3; text-align: center; padding: 10px; border: 1px solid red; background: #200;">ГЕРОЙ ПОГИБ ОТ ИЗНУРЕНИЯ.</b>';
+      if(over) $('local-actions').innerHTML = '<b class="bad" style="grid-column: 1/3; text-align: center; padding: 10px; border: 1px solid red;">ПОТРАЧЕНО.</b>';
     }
   </script>
 </body>
