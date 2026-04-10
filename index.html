@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>ЗОНА 1988: ЭНЕРГИЯ v12.0</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <style>
+    body{background:#0a0a0a;color:#d4c4a8;font-family:monospace;margin:0;padding:10px;display:flex;justify-content:center}
+    .container{display:grid;grid-template-columns:320px 1fr;gap:15px;max-width:1300px;width:100%}
+    .sidebar{display:flex;flex-direction:column;gap:10px;height:95vh}
+    #auth-container { background: #1a1a1a; border: 1px solid #444; padding: 12px; }
+    #user-info { display: none; margin-top: 10px; }
+    #nick-input { background: #000; border: 1px solid #444; color: #6f6; width: 100%; padding: 5px; font-family: monospace; outline: none; }
+    .chat-box { background: #000; border: 1px solid #333; display: flex; flex-direction: column; flex-grow: 1; min-height: 300px; }
+    #chat-messages { flex-grow: 1; overflow-y: auto; font-size: 12px; padding: 10px; border-bottom: 1px solid #222;}
+    .chat-msg { margin-bottom: 8px; border-bottom: 1px solid #111; padding-bottom: 4px; word-break: break-word; }
+    .chat-name { color: #fd6; font-weight: bold; }
+    .chat-input-row { display: flex; background: #111; }
+    #chat-input { background: #000; border: none; color: #6f6; flex-grow: 1; padding: 12px; font-family: monospace; outline: none; }
+    #chat-send { background: #222; border: none; color: #6f6; padding: 0 15px; cursor: pointer; }
+
+    .game-panel { background: #111; padding: 20px; border: 1px solid #444; overflow-y: auto; }
+    .loc-header { background: #222; padding: 15px; border: 1px solid #444; text-align: center; margin-bottom: 15px; border-left: 5px solid #f44; }
+    .loc-name { font-size: 20px; color: #fff; font-weight: bold; text-transform: uppercase; }
+    
+    .stats-emoji { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-bottom: 15px; }
+    .s-item { background: #050505; border: 1px solid #333; padding: 8px 2px; text-align: center; border-radius: 4px; border-bottom: 2px solid #444; }
+    .s-val { font-size: 11px; font-weight: bold; color: #fff; display: block;}
+    
+    #log { height: 160px; overflow-y: auto; background: #000; border: 1px solid #333; padding: 10px; font-size: 12px; margin-bottom: 15px; color: #ccc; }
+    .title { color: #555; border-bottom: 1px solid #333; margin: 15px 0 10px; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .inv-inline { background: #0a0a0a; padding: 10px; border: 1px solid #222; font-size: 12px; margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 12px; color: #6f6; }
+    
+    button { background: #1a1a1a; color: #d4c4a8; border: 1px solid #444; padding: 12px; cursor: pointer; font-family: monospace; text-align: left; transition: 0.2s; }
+    button:hover:not(:disabled) { background: #252525; border-color: #6f6; }
+    button:disabled { opacity: 0.3; cursor: not-allowed; }
+    .recipe-btn { border-color: #f90; color: #f90; font-size: 11px; }
+    .craft-btn { border-color: #0cf; color: #0cf; font-size: 11px; }
+    .bad { color: #f66; font-weight: bold; } .good { color: #6f6; } .warn { color: #fd6; }
+    
+    .critical { border-color: #f44 !important; animation: blink 1s infinite; color: #f44 !important; }
+    @keyframes blink { 50% { opacity: 0.4; } }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="sidebar">
+      <div id="auth-container">
+        <button id="login-btn" style="width:100%">🔑 ВХОД GOOGLE</button>
+        <div id="user-info">
+          <div style="font-size: 10px; color: #888;">ВАШ ПОЗЫВНОЙ:</div>
+          <input type="text" id="nick-input" maxlength="15">
+        </div>
+      </div>
+      <div class="chat-box">
+        <div id="chat-messages"></div>
+        <div class="chat-input-row">
+          <input type="text" id="chat-input" placeholder="Сказать..." maxlength="100">
+          <button id="chat-send">▶</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="game-panel">
+      <div class="loc-header"><span class="loc-name" id="cur-loc-name">Загрузка...</span></div>
+      <div class="stats-emoji" id="stats"></div>
+      <div id="log"></div>
+      <div class="title">🎒 ИНВЕНТАРЬ (Клик - съесть/использовать)</div>
+      <div class="inv-inline" id="inventory"></div>
+      
+      <div id="cooking-section">
+        <div class="title">🍳 КУХНЯ И ПИЩА (Нужны Дрова🪵 и Вода💧)</div>
+        <div class="grid-2" id="cooking-actions"></div>
+      </div>
+
+      <div class="title">📍 ДЕЙСТВИЯ (Тратят ⚡ Энергию)</div>
+      <div class="grid-2" id="local-actions"></div>
+
+      <div class="title">🗺️ КАРТА ЗОНЫ</div>
+      <div class="grid-2" id="move-actions"></div>
+      
+      <button style="width:100%; margin-top:20px; background:#300; color:#f66; border:1px solid #600; text-align:center" onclick="resetGame()">[ НАЧАТЬ ЗАНОВО ]</button>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBeCXQduKrz67Cs1SnqFFEktxAaaYNfFho",
+      authDomain: "vptest1-6a89d.firebaseapp.com",
+      projectId: "vptest1-6a89d",
+      appId: "1:452937918921:web:739b70ad20075896a1e018",
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    let currentUser = null, over = false, S = {}, chatUnsub = null;
+    const $ = id => document.getElementById(id);
+
+    const WORLD = {
+      home: { n:'🏠 Убежище', rad:0, energy: 0, actions: ['rest'] },
+      city: { n:'🏙️ Город', rad:8, energy: 20, actions: ['city_slums', 'city_factory', 'city_hospital', 'city_shop'] },
+      forest: { n:'🌲 Лес', rad:5, energy: 15, actions: ['get_wood_fast', 'forest_search'] },
+      river: { n:'🌊 Берег', rad:2, energy: 15, actions: ['get_water', 'fishing'] },
+      swamp: { n:'🍄 Болото', rad:15, energy: 25, actions: ['get_herbs', 'get_berries'] }
+    };
+
+    function updateS(attr, delta) {
+      if (over && attr !== 'hp') return; 
+      S[attr] = Math.max(0, Math.min(100, (S[attr] || 0) + delta));
+      if (S.hp <= 0) { S.hp = 0; over = true; log("💀 Вы потеряли сознание и не пришли в себя.", "bad"); }
+    }
+
+    function processSurvival(eCost = 0) {
+      if (over) return;
+      
+      // Если действие требует энергии, а её нет — бьем по здоровью
+      if (S.energy < eCost) {
+          updateS('hp', -10);
+          log("⚠ Изнурение! Вы работаете на пределе сил (-10 HP)", "bad");
+      }
+      updateS('energy', -eCost);
+
+      let dmg = 0;
+      if (S.food <= 0) dmg += 5;
+      if (S.water <= 0) dmg += 8;
+      if (S.rad >= 85) dmg += 15;
+      if (S.psy <= 10) dmg += 3;
+      if (dmg > 0) { updateS('hp', -dmg); log(`⚠ Состояние ухудшилось (-${dmg} HP)`, "bad"); }
+    }
+
+    function moveTo(locId) {
+      if(over) return;
+      const energyCost = 25;
+      log(`➡️ Переход в ${WORLD[locId].n}...`, "warn");
+      updateS('food', -10); 
+      updateS('water', -12);
+      S.loc = locId;
+      updateS('rad', WORLD[locId].rad);
+      processSurvival(energyCost); 
+      ui(); saveProgress();
+    }
+
+    function doAction(act) {
+      if(over) return;
+      let eCost = WORLD[S.loc].energy || 15;
+      updateS('food', -5); updateS('water', -7); updateS('psy', -3);
+      
+      let m = ""; let r = Math.random();
+
+      if(act === 'city_slums') {
+          if(r < 0.5) { S.rags += 2; m = "В шкафах найдено Тряпье (+2🧵)"; }
+          else if(r < 0.7) { S.canned += 1; m = "Нашел старую тушенку (+1🥫)"; }
+      }
+      else if(act === 'city_factory') {
+          if(r < 0.6) { S.scrap += 2; m = "Нашел детали (+2⚙)"; }
+          else if(r < 0.8) { S.wood += 2; m = "Нашел доски (+2🪵)"; }
+      }
+      else if(act === 'city_hospital') {
+          updateS('rad', 10);
+          if(r < 0.5) { S.meds += 1; m = "Нашел аптечку (+1💊)"; }
+      }
+      else if(act === 'city_shop') {
+          if(r < 0.4) { S.canned += 2; m = "Нашел запас еды (+2🥫)"; }
+      }
+      else if(act === 'get_wood_fast') { S.wood += 3; m = "Набрал дров (+3🪵)"; }
+      else if(act === 'forest_search') {
+          if(r < 0.4) { S.berries += 3; m = "Нашел ягоды (+3🍒)"; }
+          else if(r < 0.7) { S.mushrooms += 2; m = "Нашел грибы (+2🍄)"; }
+          else if(r < 0.9) { S.wood += 2; m = "Нашел сухие ветки (+2🪵)"; }
+      }
+      else if(act === 'get_water') { S.water_res += 3; m="Набрал мутной воды (+3💧)"; }
+      else if(act === 'fishing') { if(r<0.6){S.fish += 1; m="Поймал рыбу (+1🐟)";} }
+      else if(act === 'get_herbs') { S.herbs += 3; m="Собрал травы (+3🌿)"; }
+      else if(act === 'get_berries') { S.berries += 3; m="Собрал болотные ягоды (+3🍒)"; }
+      
+      if(act === 'rest') { 
+          S.day++; updateS('energy', 100); updateS('psy', 50); updateS('hp', 15);
+          log("💤 Глубокий сон. Силы восстановлены (+100% ⚡)", "good");
+          processSurvival(0); ui(); saveProgress(); return; 
+      }
+
+      if(!m) m = "Поиск не принес результатов.";
+      log(m + ` [-${eCost} ⚡]`);
+      processSurvival(eCost); ui(); saveProgress();
+    }
+
+    // --- ИСПОЛЬЗОВАНИЕ ПРЕДМЕТОВ ---
+    function useItem(id) {
+      if(over || S[id] <= 0) return;
+      if(id === 'wood') return; // Дрова нельзя "использовать" кликом
+
+      S[id]--;
+      if(id === 'meds') { updateS('hp', 30); updateS('psy', 20); updateS('rad', -15); log("💊 Использовал медикаменты"); }
+      if(id === 'fish') { updateS('food', 20); updateS('rad', 15); updateS('hp', -10); log("🤢 Съел сырую рыбу (Опасно!)"); }
+      if(id === 'mushrooms') { updateS('food', 12); updateS('rad', 12); log("🍄 Съел сырой гриб"); }
+      if(id === 'berries') { updateS('food', 5); updateS('water', 5); updateS('energy', 2); log("🍒 Поел ягод"); }
+      if(id === 'canned') { updateS('food', 100); log("🥫 Питательно!"); }
+      if(id === 'water_res') { updateS('water', 100); log("💧 Жажда утолена"); }
+      ui(); saveProgress();
+    }
+
+    // --- КУХНЯ И КРАФТ ---
+    function craft(recipe) {
+        if(over) return;
+        let wood = S.wood || 0;
+        let water = S.water_res || 0;
+
+        if(recipe === 'soup_mush' && S.mushrooms >= 2 && water >= 1 && wood >= 1) {
+            S.mushrooms -= 2; S.water_res--; S.wood--;
+            updateS('food', 50); updateS('hp', 10); log("🍲 Грибной суп (+50 еда, +10 HP)", "good");
+        }
+        else if(recipe === 'compote' && S.berries >= 4 && water >= 1 && wood >= 1) {
+            S.berries -= 4; S.water_res--; S.wood--;
+            updateS('water', 60); updateS('energy', 25); log("🍹 Ягодный компот (+60 вода, +25 ⚡)", "good");
+        }
+        else if(recipe === 'fried_fish' && S.fish >= 1 && wood >= 1) {
+            S.fish--; S.wood--;
+            updateS('food', 50); updateS('hp', 5); log("🍳 Жареная рыба (+50 еда)", "good");
+        }
+        else if(recipe === 'energy_mix' && S.berries >= 2 && S.mushrooms >= 1 && S.herbs >= 1) {
+            S.berries -= 2; S.mushrooms--; S.herbs--;
+            updateS('energy', 40); updateS('psy', 15); log("🧪 Энерго-смесь (+40 ⚡, +15 Псих)", "good");
+        }
+        else if(recipe === 'herb_tea' && S.herbs >= 2 && water >= 1 && wood >= 1) {
+            S.herbs -= 2; S.water_res--; S.wood--;
+            updateS('rad', -25); updateS('psy', 10); log("🍵 Травяной чай (-25 Рад)", "good");
+        }
+        else {
+            log("🚫 Недостаточно ингредиентов!", "bad");
+            return;
+        }
+        ui(); saveProgress();
+    }
+
+    // --- СИСТЕМНОЕ ---
+    function startChat() {
+      if(chatUnsub) chatUnsub();
+      chatUnsub = db.collection('messages').orderBy('createdAt', 'asc').limitToLast(30).onSnapshot(snap => {
+        $('chat-messages').innerHTML = '';
+        snap.forEach(doc => {
+          const m = doc.data();
+          $('chat-messages').innerHTML += `<div class="chat-msg"><span class="chat-name">${m.name || "Аноним"}:</span> <span>${m.text}</span></div>`;
+        });
+        $('chat-messages').scrollTop = $('chat-messages').scrollHeight;
+      });
+    }
+
+    async function sendMsg() {
+      const txt = $('chat-input').value.trim();
+      const nick = $('nick-input').value.trim() || currentUser.displayName.split(' ')[0];
+      if(!txt || !currentUser) return;
+      await db.collection('messages').add({ name: nick, text: txt, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+      $('chat-input').value = '';
+    }
+
+    auth.onAuthStateChanged(user => { 
+      if (user) { 
+        currentUser = user; 
+        $('login-btn').style.display = 'none'; 
+        $('user-info').style.display = 'block'; 
+        $('nick-input').value = localStorage.getItem('zone_nick') || user.displayName.split(' ')[0];
+        loadProgress(); startChat(); 
+      } 
+    });
+
+    $('nick-input').onchange = (e) => localStorage.setItem('zone_nick', e.target.value);
+    $('login-btn').onclick = () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+    $('chat-send').onclick = sendMsg;
+    $('chat-input').onkeypress = (e) => { if(e.key==='Enter') sendMsg(); };
+
+    async function saveProgress() { if(!currentUser) return; await db.collection('survival_v12').doc(currentUser.uid).set({S, over}); }
+    async function loadProgress() {
+      const doc = await db.collection('survival_v12').doc(currentUser.uid).get();
+      if(doc.exists) { S = doc.data().S; over = doc.data().over || false; ui(); } else { initGame(); }
+    }
+
+    async function initGame() {
+      S = { day:1, hp:100, food:80, water:80, energy:100, rad:0, psy:100, loc:'home', fish:0, mushrooms:0, berries:0, wood:5, water_res:2, herbs:0, scrap:0, rags:0, canned:1, meds:0 };
+      over = false; ui(); await saveProgress();
+    }
+
+    function resetGame() { if(confirm("Начать выживание с чистого листа?")) initGame(); }
+    function log(m, t='info') { $('log').insertAdjacentHTML('afterbegin', `<div class="${t}">[День ${S.day}] ${m}</div>`); }
+
+    function ui() {
+      const loc = WORLD[S.loc];
+      $('cur-loc-name').textContent = loc.n;
+      const st = [['❤️', S.hp], ['🍞', S.food], ['💧', S.water], ['⚡', S.energy], ['☢️', S.rad], ['🧠', S.psy], ['📅', S.day]];
+      
+      $('stats').innerHTML = st.map(s => {
+        let isCrit = false;
+        if(s[0]==='☢️') isCrit = s[1] >= 85;
+        else if(s[0]!=='📅') isCrit = s[1] <= 15;
+        return `<div class="s-item ${isCrit ? 'critical' : ''}"><span>${s[0]}</span><span class="s-val">${s[1]}${s[0]==='📅'?'':'%'}</span></div>`;
+      }).join('');
+
+      const invItems = [['canned','🥫'], ['water_res','💧'], ['berries','🍒'], ['fish','🐟'], ['mushrooms','🍄'], ['wood','🪵'], ['herbs','🌿'], ['scrap','⚙️'], ['rags','🧵'], ['meds','💊']];
+      $('inventory').innerHTML = invItems.map(i => {
+          if(S[i[0]] <= 0) return '';
+          let canClick = i[0] !== 'wood' && i[0] !== 'scrap' && i[0] !== 'rags';
+          return `<span style="${canClick?'cursor:pointer;text-decoration:underline':''}" onclick="${canClick?`useItem('${i[0]}')`:'' }">${i[1]} ${S[i[0]]}</span>`;
+      }).join(' ');
+
+      // Секция готовки
+      let cookHtml = "";
+      if(S.mushrooms >= 2) cookHtml += `<button class="recipe-btn" onclick="craft('soup_mush')">🍲 Суп (2🍄+1💧+1🪵)</button>`;
+      if(S.berries >= 4) cookHtml += `<button class="recipe-btn" onclick="craft('compote')">🍹 Компот (4🍒+1💧+1🪵)</button>`;
+      if(S.fish >= 1) cookHtml += `<button class="recipe-btn" onclick="craft('fried_fish')">🍳 Жареная рыба (1🐟+1🪵)</button>`;
+      if(S.herbs >= 2) cookHtml += `<button class="recipe-btn" onclick="craft('herb_tea')">🍵 Чай (2🌿+1💧+1🪵)</button>`;
+      if(S.berries >= 2 && S.mushrooms >= 1) cookHtml += `<button class="recipe-btn" onclick="craft('energy_mix')">🧪 Энерго-микс (2🍒+1🍄+1🌿)</button>`;
+      $('cooking-actions').innerHTML = cookHtml || "<div style='font-size:10px; color:#555'>Нет ингредиентов для готовки</div>";
+
+      const actNames = {rest:'💤 Сон (Сброс дня)', city_slums:'🏙️ Трущобы', city_factory:'🏭 Завод', city_hospital:'🏥 Больница', city_shop:'🏪 Магазин', get_wood_fast:'🪓 Сбор дров', forest_search:'🌲 Поиск в чаще', get_water:'🏺 Набор воды', fishing:'🎣 Рыбалка', get_herbs:'🌿 Сбор трав', get_berries:'🍒 Сбор ягод'};
+      $('local-actions').innerHTML = loc.actions.map(a => `<button ${over?'disabled':''} onclick="doAction('${a}')">${actNames[a]}</button>`).join('');
+      $('move-actions').innerHTML = Object.entries(WORLD).map(([id, data]) => `<button class="move-btn" ${id===S.loc||over?'disabled':''} onclick="moveTo('${id}')">➡️ ${data.n}</button>`).join('');
+      
+      if(over) $('local-actions').innerHTML = '<b class="bad" style="grid-column: 1/3; text-align: center; padding: 10px; border: 1px solid red; background: #200;">ГЕРОЙ ПОГИБ ОТ ИЗНУРЕНИЯ.</b>';
+    }
+  </script>
+</body>
+</html>
