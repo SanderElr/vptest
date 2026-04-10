@@ -2,8 +2,9 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>ЗОНА 1988: ВЫЖИВАНИЕ v16.2</title>
+  <title>ЗОНА 1988: ВЫЖИВАНИЕ v16.4</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/SanderElr/vptest/main/favicon.png">
   <style>
     body{background:#0a0a0a;color:#d4c4a8;font-family:monospace;margin:0;padding:10px;display:flex;justify-content:center}
     .container{display:grid;grid-template-columns:320px 1fr;gap:15px;max-width:1300px;width:100%}
@@ -28,7 +29,22 @@
     .s-item { background: #050505; border: 1px solid #333; padding: 8px 2px; text-align: center; border-radius: 4px; border-bottom: 2px solid #444; }
     .s-val { font-size: 11px; font-weight: bold; color: #fff; display: block;}
     
-    #log { height: 160px; overflow-y: auto; background: #000; border: 1px solid #333; padding: 10px; font-size: 12px; margin-bottom: 15px; color: #ccc; }
+    .log-container { display: flex; gap: 10px; margin-bottom: 15px; align-items: stretch; }
+    #log { flex-grow: 1; height: 160px; overflow-y: auto; background: #000; border: 1px solid #333; padding: 10px; font-size: 12px; color: #ccc; }
+    
+    .radio-img-box { 
+        width: 120px; 
+        height: 182px; 
+        background: #000; 
+        border: 1px solid #333; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center;
+        overflow: hidden;
+    }
+    #radio-visual { width: 100%; height: 100%; object-fit: cover; opacity: 0.3; transition: all 0.3s; filter: grayscale(1); }
+    .active-radio { opacity: 1.0 !important; filter: grayscale(0) !important; border-color: #6f6 !important; box-shadow: 0 0 15px rgba(0,255,0,0.4); }
+
     .title { color: #555; border-bottom: 1px solid #333; margin: 25px 0 10px; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; }
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .inv-inline { background: #0a0a0a; padding: 10px; border: 1px solid #222; font-size: 12px; margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 12px; color: #6f6; }
@@ -73,8 +89,15 @@
 
     <div class="game-panel">
       <div class="loc-header"><span class="loc-name" id="cur-loc-name">Загрузка...</span></div>
+      
       <div class="stats-emoji" id="stats"></div>
-      <div id="log"></div>
+      
+      <div class="log-container">
+        <div id="log"></div>
+        <div class="radio-img-box">
+          <img id="radio-visual" src="https://raw.githubusercontent.com/SanderElr/vptest/main/radio.png" alt="📻">
+        </div>
+      </div>
       
       <div class="title">🎒 ИНВЕНТАРЬ</div>
       <div class="inv-inline" id="inventory"></div>
@@ -89,14 +112,12 @@
         <div class="title">🛠️ МАСТЕРСКАЯ И КУХНЯ</div>
         
         <div class="category-header" onclick="toggleCategory('cat-cooking')">
-          <span>🍳 ГОТОВКА (Еда и супы)</span>
-          <span id="arrow-cat-cooking">▼</span>
+          <span>🍳 ГОТОВКА</span> <span id="arrow-cat-cooking">▼</span>
         </div>
         <div id="cat-cooking" class="category-content"></div>
 
         <div class="category-header" onclick="toggleCategory('cat-meds')">
-          <span>💊 МЕДИЦИНА (Отвары и бинты)</span>
-          <span id="arrow-cat-meds">▼</span>
+          <span>💊 МЕДИЦИНА</span> <span id="arrow-cat-meds">▼</span>
         </div>
         <div id="cat-meds" class="category-content"></div>
       </div>
@@ -110,7 +131,9 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
   <script>
-    // --- КОНФИГУРАЦИЯ РЕЦЕПТОВ (Сбалансированная психика) ---
+    // Ссылка на твой репозиторий
+    const RADIO_IMG_URL = "https://raw.githubusercontent.com/SanderElr/vptest/main/radio.png";
+
     const RECIPES = [
       { id: 'fried_fish', cat: 'cooking', n: '🍳 ЖАРЕНАЯ РЫБА', p: '1🐟 1🪵', s: '+50🍞 +10⚡', 
         check: (s) => s.fish >= 1 && s.wood >= 1,
@@ -148,7 +171,7 @@
     let currentUser = null, over = false, S = {}, chatUnsub = null;
     const $ = id => document.getElementById(id);
 
-    // Расход психики уменьшен
+    // Сбалансированный расход психики
     const WORLD = {
       home: { n:'🏠 Убежище', rad:0, energy: 0, psy: 0, actions: ['rest', 'radio'] },
       city: { n:'🏙️ Город', rad:8, energy: 12, psy: 6, actions: ['city_slums', 'city_factory', 'city_hospital', 'city_shop'] },
@@ -175,7 +198,7 @@
       if (S.water <= 0) dmg += 8;
       if (S.rad >= 85) dmg += 15;
       if (S.psy <= 10) dmg += 5;
-      if (dmg > 0) { updateS('hp', -dmg); log(`⚠ Критическое состояние: -${dmg} HP`, "bad"); }
+      if (dmg > 0) { updateS('hp', -dmg); log(`⚠ Состояние критическое: -${dmg} HP`, "bad"); }
     }
 
     function toggleCategory(id) {
@@ -189,7 +212,7 @@
       updateS('food', -5); updateS('water', -5);
       S.loc = locId;
       updateS('rad', WORLD[locId].rad);
-      processSurvival(15, 6); // Расход психики на переход уменьшен
+      processSurvival(15, 6);
       ui(); saveProgress();
     }
 
@@ -200,9 +223,11 @@
           if(S.batteries > 0) {
               S.batteries--;
               updateS('psy', 40);
-              log("📻 Вышел в эфир. Голос с той стороны вселяет надежду... (+40 🧠)", "good");
+              log("📻 Связь установлена. Голоса в эфире дарят спокойствие... (+40 🧠)", "good");
+              $('radio-visual').classList.add('active-radio');
+              setTimeout(() => $('radio-visual').classList.remove('active-radio'), 3000);
           } else {
-              log("🚫 Рация молчит. Нужна батарейка 🔋", "bad");
+              log("🚫 Рация мертва. Нужна батарейка 🔋", "bad");
           }
           ui(); saveProgress(); return;
       }
@@ -233,11 +258,11 @@
       
       if(act === 'rest') { 
           S.day++; updateS('energy', 100); updateS('psy', 40); updateS('hp', 25);
-          log("💤 Новый день. Сон немного подлечил раны.", "good");
+          log("💤 Новый день. Сон пошел на пользу.", "good");
           processSurvival(0, 0); ui(); saveProgress(); return; 
       }
 
-      if(!m) m = "Поиски пусты.";
+      if(!m) m = "Ничего интересного.";
       log(m + ` [⚡-${eCost} 🧠-${pCost}]`);
       processSurvival(eCost, pCost); ui(); saveProgress();
     }
@@ -246,12 +271,12 @@
       if(over || S[id] <= 0) return;
       if(['wood', 'scrap', 'rags', 'batteries'].includes(id)) return;
       S[id]--;
-      if(id === 'meds') { updateS('hp', 30); updateS('psy', 25); updateS('rad', -15); log("💊 Принял медикаменты"); }
-      if(id === 'fish') { updateS('food', 20); updateS('rad', 15); updateS('hp', -10); log("🤢 Съел сырую рыбу. Плохо..."); }
+      if(id === 'meds') { updateS('hp', 30); updateS('psy', 25); updateS('rad', -15); log("💊 Принял таблетки"); }
+      if(id === 'fish') { updateS('food', 20); updateS('rad', 15); updateS('hp', -10); log("🤢 Съел сырую рыбу"); }
       if(id === 'mushrooms') { updateS('food', 12); updateS('rad', 10); log("🍄 Съел гриб"); }
       if(id === 'berries') { updateS('food', 5); updateS('water', 5); updateS('energy', 3); log("🍒 Горсть ягод"); }
-      if(id === 'canned') { updateS('food', 100); updateS('psy', 10); log("🥫 Сытный обед из банки"); }
-      if(id === 'water_res') { updateS('water', 100); log("💧 Напился чистой воды"); }
+      if(id === 'canned') { updateS('food', 100); updateS('psy', 10); log("🥫 Вкусная тушенка"); }
+      if(id === 'water_res') { updateS('water', 100); log("💧 Чистая вода"); }
       ui(); saveProgress();
     }
 
@@ -261,9 +286,9 @@
         if (recipe && recipe.check(S)) {
             const effects = recipe.apply(S);
             for (let stat in effects) { updateS(stat, effects[stat]); }
-            log(`🛠️ ${recipe.n} готов!`, "good");
+            log(`🛠️ Скрафчено: ${recipe.n}`, "good");
             ui(); saveProgress();
-        } else { log("🚫 Не хватает ингредиентов", "bad"); }
+        } else { log("🚫 Недостаточно материалов", "bad"); }
     }
 
     function startChat() {
@@ -318,6 +343,7 @@
     function ui() {
       const loc = WORLD[S.loc];
       $('cur-loc-name').textContent = loc.n;
+
       const st = [['❤️', S.hp], ['🍞', S.food], ['💧', S.water], ['⚡', S.energy], ['☢️', S.rad], ['🧠', S.psy], ['📅', S.day]];
       $('stats').innerHTML = st.map(s => {
         let isCrit = (s[0]==='☢️') ? s[1] >= 85 : (s[1] <= 15 && s[0] !== '📅');
