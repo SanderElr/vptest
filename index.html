@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>ЗОНА 1988: Build v16.12.16</title>
+  <title>ЗОНА 1988: Hardcore Survival</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/SanderElr/vptest/main/favicon.png">
   <style>
@@ -27,39 +27,42 @@
 
     /* ГЕЙМПЛЕЙ */
     .game-panel { background: #111; padding: 20px; border: 1px solid #444; overflow-y: auto; height: 95vh; box-sizing: border-box; }
-    .time-weather-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; font-size: 11px; background: #1a1a1a; padding: 10px; border: 1px solid #333; border-bottom: 2px solid #555; }
+    .time-weather-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; font-size: 11px; background: #1a1a1a; padding: 10px; border: 1px solid #333; }
     .tw-item { color: #888; }
     .tw-val { color: #fff; font-weight: bold; float: right; }
 
     .top-panel { display: flex; gap: 10px; margin-bottom: 15px; align-items: stretch; }
     .loc-header { background: #222; padding: 10px 15px; border: 1px solid #444; border-left: 5px solid #f44; display: flex; align-items: center; justify-content: center; min-width: 140px; }
     .loc-name { font-size: 14px; color: #fff; font-weight: bold; text-transform: uppercase; }
-    .radio-text { flex: 1; background: #050505; border: 1px solid #333; color: #6a9c6a; font-size: 12px; padding: 10px; display: flex; align-items: center; font-style: italic; min-height: 45px;}
+    .radio-text { flex: 1; background: #050505; border: 1px solid #333; color: #6a9c6a; font-size: 11px; padding: 10px; font-style: italic; display: flex; align-items: center; }
 
     .log-row { display: flex; gap: 10px; height: 200px; margin-bottom: 15px; }
     #log { flex: 1; overflow-y: auto; background: #000; border: 1px solid #333; padding: 10px; font-size: 12px; color: #ccc; }
     #loc-img { width: 200px; height: 200px; background: #050505; border: 1px solid #444; background-size: cover; background-position: center; image-rendering: pixelated; }
 
-    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 15px; }
-    .s-item { background: #050505; border: 1px solid #333; padding: 10px 2px; text-align: center; border-bottom: 2px solid #444; }
-    .s-val { font-size: 12px; font-weight: bold; color: #fff; display: block; margin-top: 4px;}
+    /* ПАНЕЛЬ СТАТИСТИКИ (В ОДНУ СТРОКУ) */
+    .stats-grid { display: flex; justify-content: space-between; gap: 5px; margin-bottom: 15px; }
+    .s-item { flex: 1; background: #050505; border: 1px solid #333; padding: 8px 2px; text-align: center; }
+    .s-val { font-size: 12px; font-weight: bold; color: #fff; display: block; margin-top: 4px; }
     
-    .title { color: #555; border-bottom: 1px solid #333; margin: 25px 0 10px; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; }
+    .title { color: #555; border-bottom: 1px solid #333; margin: 20px 0 10px; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; }
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     
-    .inv-inline { background: #0a0a0a; padding: 10px; border: 1px solid #222; font-size: 12px; margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 12px; color: #6f6; min-height: 40px;}
-    .inv-clickable { cursor: pointer; border-bottom: 1px dotted #6f6; padding: 2px 4px; transition: background 0.2s; }
+    .inv-inline { background: #0a0a0a; padding: 10px; border: 1px solid #222; font-size: 12px; margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 12px; color: #6f6; cursor: default; }
+    .inv-item { position: relative; display: inline-block; }
+    .inv-clickable { cursor: pointer; border-bottom: 1px dotted #6f6; transition: 0.2s; }
     .inv-clickable:hover { background: #1a3a1a; color: #fff; }
     
-    button { background: #1a1a1a; color: #d4c4a8; border: 1px solid #444; padding: 12px; cursor: pointer; font-family: monospace; text-align: left; outline: none; }
+    button { background: #1a1a1a; color: #d4c4a8; border: 1px solid #444; padding: 10px; cursor: pointer; font-family: monospace; text-align: left; }
     button:hover:not(:disabled) { background: #252525; border-color: #6f6; }
     button:disabled { opacity: 0.3; cursor: not-allowed; color: #555; }
+    .craft-cost { font-size: 10px; color: #888; margin-top: 4px; display: block; }
 
-    /* МОДАЛКА АРХИВА */
     #archive-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; padding: 20px; box-sizing: border-box; }
     .archive-content { max-width: 800px; margin: 0 auto; background: #111; border: 1px solid #444; height: 90vh; display: flex; flex-direction: column; }
     .archive-header { padding: 15px; background: #222; border-bottom: 1px solid #444; display: flex; justify-content: space-between; align-items: center; }
-    #archive-list { flex-grow: 1; overflow-y: auto; padding: 20px; font-size: 13px; color: #ccc; }
+    #archive-list { flex-grow: 1; overflow-y: auto; padding: 20px; font-size: 13px; }
+    .bad { color: #f44; }
   </style>
 </head>
 <body>
@@ -67,10 +70,10 @@
   <div class="container">
     <div class="sidebar">
       <div style="background: #1a1a1a; border: 1px solid #444; padding: 10px; display: flex; align-items: center; justify-content: space-between;">
-        <span style="font-size: 10px; color: #888;">СИГНАЛ:</span>
+        <span style="font-size: 10px; color: #888;">СИГНАЛ ФОНА:</span>
         <button id="music-toggle" style="padding: 5px 10px; font-size: 10px; background: #222; color: #f66; border: 1px solid #444; cursor: pointer;">[ ВЫКЛ ]</button>
       </div>
-      <audio id="bg-music" loop><source src="mus.mp3" type="audio/mpeg"></audio>
+      <audio id="bg-music" loop><source src="https://raw.githubusercontent.com/SanderElr/vptest/main/mus.mp3" type="audio/mpeg"></audio>
 
       <div id="auth-container">
         <button id="login-btn" style="width:100%; text-align:center;">🔑 ВХОД В СИСТЕМУ</button>
@@ -92,10 +95,10 @@
 
     <div class="game-panel">
       <div class="time-weather-panel">
-        <div class="tw-item">📅 Дата: <span class="tw-val" id="display-date">26.12.1988</span></div>
+        <div class="tw-item">📅 Дата: <span class="tw-val" id="display-date">...</span></div>
         <div class="tw-item">☁️ Погода: <span class="tw-val" id="display-weather">...</span></div>
-        <div class="tw-item">🕒 Время: <span class="tw-val" id="display-time">08:00</span></div>
-        <div class="tw-item">🌓 Фаза: <span class="tw-val" id="display-phase">Утро</span></div>
+        <div class="tw-item">🕒 Время: <span class="tw-val" id="display-time">...</span></div>
+        <div class="tw-item">🌓 Фаза: <span class="tw-val" id="display-phase">...</span></div>
       </div>
 
       <div class="top-panel">
@@ -110,10 +113,10 @@
         <div id="loc-img"></div>
       </div>
       
-      <div class="title">🎒 ВЕЩИ (Клик — использовать)</div>
+      <div class="title">🎒 ВЕЩИ И ПРЕДМЕТЫ</div>
       <div id="inventory" class="inv-inline"></div>
       
-      <div class="title">🛠️ СБОРКА И ГОТОВКА</div>
+      <div class="title">🛠️ КРАФТ И ПРИГОТОВЛЕНИЕ</div>
       <div id="cook-actions" class="grid-2"></div>
       
       <div class="title">📍 ДЕЙСТВИЯ (1 ЧАС)</div>
@@ -122,13 +125,13 @@
       <div class="title">🗺️ ПЕРЕХОД (3 ЧАСА)</div>
       <div id="move-actions" class="grid-2"></div>
       
-      <button style="width:100%; margin-top:40px; background:#300; color:#f66; border:1px solid #600; text-align:center" onclick="resetGame()">[ СБРОС ДАННЫХ ]</button>
+      <button style="width:100%; margin-top:40px; background:#300; color:#f66; border:1px solid #600; text-align:center" onclick="resetGame()">[ СБРОС ИГРЫ (СМЕРТЬ) ]</button>
     </div>
   </div>
 
   <div id="archive-modal">
     <div class="archive-content">
-      <div class="archive-header"><span style="color:#6f6;">АРХИВ</span><button onclick="window.closeArchive()">[ X ]</button></div>
+      <div class="archive-header"><span style="color:#6f6;">АРХИВ</span><button onclick="window.closeArchive()" style="background:#400; color:#fff; border:none; padding:5px 15px; cursor:pointer;">[ X ]</button></div>
       <div id="archive-list"></div>
     </div>
   </div>
@@ -137,12 +140,82 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
-  <script src="world.js"></script>
-  <script src="recipes.js"></script>
-  <script src="radio.js"></script>
-  <script src="events.js"></script>
-
   <script>
+    // ==========================================
+    // БАЗА ДАННЫХ ИГРЫ И СОБЫТИЙ
+    // ==========================================
+    
+    // БАЗА РАДИО СООБЩЕНИЙ
+    window.RADIO_MESSAGES = [
+        "Шшш... Внимание всем сталкерам... Выброс ожидается через... шшш...",
+        "Шшш... Кто-нибудь слышит? Мы застряли на заводе Юпитер... нужны медикаменты... шшш...",
+        "Шшш... Куплю артефакты. Дорого. Спросить Сидоровича... шшш...",
+        "Шшш... [звуки выстрелов и рычание] ...они лезут изо всех щелей! Отступаем! ...шшш...",
+        "Шшш... [сквозь помехи играет старая советская песня] ...шшш...",
+        "Шшш... Наблюдаю активность монолитовцев в секторе 4. Будьте осторожны... шшш...",
+        "Шшш... Свобода рулит! Всем свободовцам сбор на базе... шшш...",
+        "Шшш... Говорит Долг. Территория завода Росток находится под нашей защитой... шшш...",
+        "Шшш... [жуткий шепот на грани слышимости] ...иди ко мне... шшш..."
+    ];
+
+    window.getRandomRadioMessage = function() {
+        return window.RADIO_MESSAGES[Math.floor(Math.random() * window.RADIO_MESSAGES.length)];
+    };
+
+    window.GAME_EVENTS = {
+        weather: [
+            { n: "Ясно", mults: { scavenge: 1.2, cost: 1.0, rad: 0, psy: +1 } },
+            { n: "Свинцовые тучи", mults: { scavenge: 1.0, cost: 1.0, rad: 0, psy: -1 } },
+            { n: "Радиоактивный снег", mults: { scavenge: 0.8, cost: 1.2, rad: +2, psy: -2 } },
+            { n: "Черный буран", mults: { scavenge: 0.4, cost: 2.0, rad: +1, psy: -5 } },
+            { n: "Мертвый штиль", mults: { scavenge: 1.0, cost: 1.0, rad: 0, psy: -3 } },
+            { n: "Кислотный иней", mults: { scavenge: 0.7, cost: 1.5, rad: +2, psy: -2 } }
+        ],
+        dayPhases: {
+            night: { n: "Ночь", mults: { scavenge: 0.5, psy: -3 } },
+            morning: { n: "Утро", mults: { scavenge: 1.0, psy: 0 } },
+            day: { n: "День", mults: { scavenge: 1.1, psy: +1 } },
+            evening: { n: "Вечер", mults: { scavenge: 0.9, psy: -1 } }
+        }
+    };
+
+    window.WORLD = {
+      home: { n: '🏠 Убежище', img: 'https://raw.githubusercontent.com/SanderElr/vptest/main/loc_home.png', acts: { 'rest': '💤 Спать (Восст. Сил и Психики)', 'radio': '📻 Радиоэфир (+Психика)' } },
+      city: { n: '🏙️ Город', img: 'https://raw.githubusercontent.com/SanderElr/vptest/main/loc_city.png', acts: { 'scavenge_scrap': '⚙️ Искать лом', 'scavenge_rags': '🧵 Искать ветошь', 'search_ruins': '🏢 Рискованный поиск' } },
+      forest: { n: '🌲 Лес', img: 'https://raw.githubusercontent.com/SanderElr/vptest/main/loc_forest.png', acts: { 'get_wood': '🪵 Рубить дрова', 'forage_herbs': '🌿 Травы и ягоды', 'burn_coal': '🔥 Жечь уголь (2 дров)' } },
+      wasteland: { n: '☢️ Пустошь', img: 'https://raw.githubusercontent.com/SanderElr/vptest/main/loc_wasteland.png', acts: { 'scavenge_scrap': '⚙️ Собирать лом', 'stalking': '💀 Опасная вылазка' } },
+      river: { n: '🌊 Река', img: 'https://raw.githubusercontent.com/SanderElr/vptest/main/loc_river.png', acts: { 'fish': '🐟 Рыбачить', 'get_water': '🪣 Набрать грязной воды' } },
+      swamp: { n: '🍄 Болото', img: 'https://raw.githubusercontent.com/SanderElr/vptest/main/loc_swamp.png', acts: { 'forage_mushrooms': '🍄 Собирать грибы', 'get_water': '🪣 Набрать болотной воды' } }
+    };
+
+    window.RECIPES = {
+        simple: {
+            cook_fish: { n: "🔥 Пожарить рыбу", res: { raw_fish: 1, wood: 1 }, gain: { food: 35, psy: 5 }, log: "Рыба зажарена на костре." },
+            make_bandage: { n: "🩹 Грязный бинт", res: { rags: 2 }, gain: { hp: 15 }, log: "Перевязал раны." }
+        },
+        advanced: {
+            craft_filter: { n: "🛢️ Угольный фильтр", res: { coal: 1, rags: 1, scrap: 1 }, items: { filter: 1 }, log: "Собран фильтр для воды." },
+            purify_water: { n: "💧 Очистить воду (Заполнить флягу)", res: { dirty_water: 1, filter: 1 }, custom: (s) => { s.flask = 3; }, log: "Фляга полна (3 глотка)." },
+            brew_tea: { n: "🍵 Лечебный отвар", res: { dirty_water: 1, herbs: 1, berries: 1, wood: 1 }, gain: { hp: 15, psy: 20, rad: -10 }, log: "Отвар вывел радиацию." },
+            cook_stew: { n: "🍲 Сталкерская похлебка", res: { raw_fish: 1, mushrooms: 1, dirty_water: 1, wood: 2 }, gain: { food: 60, hp: 10, psy: 15, rad: 5 }, log: "Наваристо, но фон повышен." }
+        }
+    };
+
+    const ICONS = { raw_fish: '🐟', dirty_water: '🪣', wood: '🪵', rags: '🧵', scrap: '⚙️', coal: '⬛', herbs: '🌿', berries: '🫐', mushrooms: '🍄', filter: '🛢️' };
+
+    window.canCraft = function(id, cat) {
+        const r = window.RECIPES[cat][id];
+        if (!r) return false;
+        return Object.entries(r.res).every(([k, v]) => window.S[k] >= v);
+    };
+
+    window.getRecipeCostHTML = function(res) {
+        return Object.entries(res).map(([k, v]) => `${ICONS[k]||k}${v}`).join(' ');
+    };
+
+    // ==========================================
+    // ИНИЦИАЛИЗАЦИЯ И СИСТЕМНЫЕ НАСТРОЙКИ
+    // ==========================================
     const firebaseConfig = { apiKey: "AIzaSyBeCXQduKrz67Cs1SnqFFEktxAaaYNfFho", authDomain: "vptest1-6a89d.firebaseapp.com", projectId: "vptest1-6a89d", appId: "1:452937918921:web:739b70ad20075896a1e018" };
     firebase.initializeApp(firebaseConfig);
     window.auth = firebase.auth();
@@ -151,24 +224,47 @@
     window.currentUser = null;
     window.S = null;
 
-    // --- МУЗЫКА ---
+    // --- БЕЗОПАСНАЯ ЛОГИКА МУЗЫКИ ---
     const bgMusic = $('bg-music');
     const musicBtn = $('music-toggle');
     bgMusic.volume = 0.4;
-    
-    musicBtn.onclick = () => {
-      if (bgMusic.paused) {
-        bgMusic.play();
-        musicBtn.textContent = "[ ВКЛ ]"; musicBtn.style.color = "#6f6";
-        localStorage.setItem('zone_music', 'on');
-      } else {
-        bgMusic.pause();
-        musicBtn.textContent = "[ ВЫКЛ ]"; musicBtn.style.color = "#f66";
-        localStorage.setItem('zone_music', 'off');
-      }
+
+    window.playMusic = function() {
+        const playPromise = bgMusic.play();
+        if (playPromise !== undefined) {
+            playPromise.then(() => {
+                musicBtn.textContent = "[ ВКЛ ]";
+                musicBtn.style.color = "#6f6";
+                localStorage.setItem('z_mus', '1');
+            }).catch(e => {
+                console.error("Audio block/error:", e);
+                musicBtn.textContent = "[ ОШИБКА ЗВУКА ]";
+                musicBtn.style.color = "#f44";
+            });
+        }
     };
 
-    // --- ЧАТ (ИЗ 16.12.6) ---
+    window.pauseMusic = function() {
+        bgMusic.pause();
+        musicBtn.textContent = "[ ВЫКЛ ]";
+        musicBtn.style.color = "#f66";
+        localStorage.setItem('z_mus', '0');
+    };
+
+    musicBtn.onclick = () => {
+        if (bgMusic.paused) window.playMusic();
+        else window.pauseMusic();
+    };
+
+    // Глобальный перехватчик первого клика (для обхода автоплея браузера)
+    document.body.addEventListener('click', function initAudio() {
+        if (localStorage.getItem('z_mus') === '1' && bgMusic.paused) {
+            window.playMusic();
+        }
+        document.body.removeEventListener('click', initAudio);
+    });
+
+    // --- ЧАТ ---
     let chatUnsub = null;
     window.startChat = function() {
       if (chatUnsub) chatUnsub();
@@ -178,27 +274,21 @@
         chatContainer.innerHTML = '';
         snap.forEach(doc => {
           const m = doc.data(); if (!m.name) return;
-          const isItMe = (myNick && m.name.trim() === myNick);
-          const isMentioned = (myNick && m.text.includes(`@${myNick}`));
-          let msgClasses = "chat-msg";
-          if (isItMe || isMentioned) msgClasses += " chat-msg-highlight";
-          if (isMentioned && !isItMe) msgClasses += " chat-msg-mention-alt";
-          chatContainer.innerHTML += `<div class="${msgClasses}"><span class="${isItMe?'chat-name-self':'chat-name'}" onclick="window.mention('${m.name.trim()}')">${m.name}:</span> <span>${m.text}</span></div>`;
+          const isMe = (myNick && m.name === myNick);
+          const hasMention = (myNick && m.text.includes(`@${myNick}`));
+          let cls = "chat-msg";
+          if (isMe || hasMention) cls += " chat-msg-highlight";
+          if (hasMention && !isMe) cls += " chat-msg-mention-alt";
+          chatContainer.innerHTML += `<div class="${cls}"><span class="${isMe?'chat-name-self':'chat-name'}" onclick="window.mention('${m.name}')">${m.name}:</span> <span>${m.text}</span></div>`;
         });
         chatContainer.scrollTop = chatContainer.scrollHeight;
       });
     };
-
-    window.sendChatMsg = function() {
-      const input = $('chat-input');
-      const text = input.value.trim();
-      const nick = $('nick-input').value.trim() || currentUser.displayName.split(' ')[0];
-      if (text && currentUser) {
-        db.collection('messages').add({ name: nick, text: text, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-        input.value = '';
-      }
+    window.sendChatMsg = () => {
+      const i = $('chat-input'); const t = i.value.trim();
+      const n = $('nick-input').value.trim() || currentUser.displayName.split(' ')[0];
+      if (t && currentUser) { db.collection('messages').add({ name: n, text: t, createdAt: firebase.firestore.FieldValue.serverTimestamp() }); i.value = ''; }
     };
-
     window.mention = n => { const i = $('chat-input'); i.value = `@${n}, ${i.value}`; i.focus(); };
     window.openArchive = () => {
       $('archive-modal').style.display='block';
@@ -210,88 +300,166 @@
     };
     window.closeArchive = () => $('archive-modal').style.display='none';
 
-    // --- ГЕЙМПЛЕЙ ---
+    // ==========================================
+    // ЛОГИКА ГЕЙМПЛЕЯ
+    // ==========================================
+    function init() { 
+      S = {
+        totalHours: 8, hp: 100, food: 80, water: 80, energy: 100, psy: 100, rad: 0, loc: 'home', weatherId: 0,
+        wood: 2, rags: 2, scrap: 0, coal: 0, herbs: 0, berries: 0, mushrooms: 0, raw_fish: 0, dirty_water: 0, filter: 0, flask: 3 
+      }; 
+    }
+
+    function processTick(hours, isSafe = false) {
+      const w = window.GAME_EVENTS.weather[S.weatherId];
+      const h = (8 + S.totalHours) % 24;
+      const ph = (h < 6) ? window.GAME_EVENTS.dayPhases.night : (h < 12) ? window.GAME_EVENTS.dayPhases.morning : (h < 18) ? window.GAME_EVENTS.dayPhases.day : window.GAME_EVENTS.dayPhases.evening;
+      
+      let costM = w.mults.cost;
+      let radA = w.mults.rad;
+      let psyA = w.mults.psy + ph.mults.psy;
+
+      if (isSafe) { costM = 0.5; radA = 0; psyA = +2; } // В убежище статы падают медленнее
+
+      for(let i=0; i<hours; i++) {
+        S.food = Math.max(0, S.food - (1.5 * costM));
+        S.water = Math.max(0, S.water - (2 * costM));
+        S.energy = Math.max(0, S.energy - (3 * costM));
+        S.psy = Math.min(100, Math.max(0, S.psy + psyA));
+        S.rad = Math.min(100, S.rad + radA);
+        S.totalHours++;
+      }
+      
+      // Урон от критических состояний
+      if (S.food <= 0) S.hp -= hours * 2;
+      if (S.water <= 0) S.hp -= hours * 3;
+      if (S.rad > 50) S.hp -= hours * 1;
+      
+      S.hp = Math.max(0, S.hp);
+      if (S.hp <= 0) { log("💀 Вы погибли. Зона забрала еще одного...", "bad"); window.resetGame(); }
+    }
+
     window.ui = function() {
       if(!S) return;
-      const loc = window.WORLD[S.loc] || window.WORLD.home;
-      const startDay = new Date(1988, 11, 26);
-      const currDate = new Date(startDay.getTime() + (S.totalHours * 3600000));
-      const h = currDate.getHours();
+      const loc = window.WORLD[S.loc];
+      const date = new Date(1988, 11, 26, 8 + S.totalHours);
+      const h = date.getHours();
+      const ph = (h < 6) ? window.GAME_EVENTS.dayPhases.night : (h < 12) ? window.GAME_EVENTS.dayPhases.morning : (h < 18) ? window.GAME_EVENTS.dayPhases.day : window.GAME_EVENTS.dayPhases.evening;
       
-      $('display-date').textContent = currDate.toLocaleDateString('ru-RU');
+      $('display-date').textContent = date.toLocaleDateString('ru-RU');
       $('display-time').textContent = (h < 10 ? '0'+h : h) + ':00';
-      
-      let ph = window.GAME_EVENTS.dayPhases.day;
-      if (h < 6) ph = window.GAME_EVENTS.dayPhases.night;
-      else if (h < 12) ph = window.GAME_EVENTS.dayPhases.morning;
-      else if (h >= 18) ph = window.GAME_EVENTS.dayPhases.evening;
-      
       $('display-phase').textContent = ph.n;
       $('display-weather').textContent = window.GAME_EVENTS.weather[S.weatherId].n;
       $('cur-loc-name').textContent = loc.n;
-      $('radio-display').textContent = window.getRandomRadioMessage ? window.getRandomRadioMessage() : "...";
       $('loc-img').style.backgroundImage = `url('${loc.img}')`;
       
-      $('stats').innerHTML = [['❤️', S.hp], ['🍞', S.food], ['💧', S.water], ['⚡', S.energy], ['🧠', S.psy], ['☢️', S.rad]].map(s=>`<div class="s-item"><span>${s[0]}</span><span class="s-val">${s[1]}</span></div>`).join('');
+      // Вызов случайного сообщения радио
+      $('radio-display').textContent = window.getRandomRadioMessage(); 
       
-      const invItems = [{id:'fish', icon:'🐟', edible:true}, {id:'water_res', icon:'💧', edible:true}, {id:'wood', icon:'🪵'}, {id:'rags', icon:'🧵'}, {id:'batteries', icon:'🔋'}];
-      $('inventory').innerHTML = invItems.map(i => S[i.id] > 0 ? `<span class="${i.edible?'inv-clickable':''}" onclick="${i.edible?`doAction('use_${i.id}')`:''}">${i.icon} ${S[i.id]}</span>` : '').join(' ');
+      $('stats').innerHTML = [['❤️', S.hp], ['🍞', S.food], ['💧', S.water], ['⚡', S.energy], ['🧠', S.psy], ['☢️', S.rad]].map(s=>`<div class="s-item"><span>${s[0]}</span><span class="s-val">${Math.floor(s[1])}</span></div>`).join('');
+      
+      // Инвентарь с Tooltips
+      let inv = S.flask > 0 
+        ? `<span class="inv-item inv-clickable" title="Фляга с чистой водой" style="color:#6cf;" onclick="doAction('use_flask')">🍶 Фляга (${S.flask}/3)</span>` 
+        : `<span class="inv-item" title="Пустая фляга" style="color:#555;">🍶 Фляга (Пусто)</span>`;
+        
+      const items = [
+        {id:'raw_fish', ic:'🐟', name:'Сырая рыба'}, {id:'dirty_water', ic:'🪣', name:'Грязная вода'}, 
+        {id:'wood', ic:'🪵', name:'Дрова'}, {id:'rags', ic:'🧵', name:'Ветошь'}, 
+        {id:'scrap', ic:'⚙️', name:'Металлолом'}, {id:'coal', ic:'⬛', name:'Уголь'}, 
+        {id:'herbs', ic:'🌿', name:'Травы'}, {id:'berries', ic:'🫐', name:'Ягоды'}, 
+        {id:'mushrooms', ic:'🍄', name:'Грибы'}, {id:'filter', ic:'🛢️', name:'Фильтр'}
+      ];
+      inv += items.map(i => S[i.id] > 0 ? `<span class="inv-item" title="${i.name}">${i.ic} ${S[i.id]}</span>` : '').join(' ');
+      $('inventory').innerHTML = inv;
 
-      let craftHtml = '';
-      if(window.RECIPES) {
-        Object.entries(window.RECIPES.craft).forEach(([id, r]) => { craftHtml += `<button ${!canCraft(id,'craft')?'disabled':''} onclick="applyRecipe('${id}','craft')">${r.n}</button>`; });
-        if (S.loc==='home') Object.entries(window.RECIPES.cooking).forEach(([id, r]) => { craftHtml += `<button ${!canCraft(id,'cooking')?'disabled':''} onclick="applyRecipe('${id}','cooking')">${r.n}</button>`; });
+      // Крафт
+      let cr = '';
+      Object.entries(window.RECIPES.simple).forEach(([id, r]) => { 
+        cr += `<button ${!canCraft(id,'simple')?'disabled':''} onclick="applyRecipe('${id}','simple')">
+                 <div>${r.n}</div>
+                 <span class="craft-cost">Нужно: ${getRecipeCostHTML(r.res)}</span>
+               </button>`; 
+      });
+      if (S.loc === 'home') {
+        Object.entries(window.RECIPES.advanced).forEach(([id, r]) => { 
+          cr += `<button ${!canCraft(id,'advanced')?'disabled':''} onclick="applyRecipe('${id}','advanced')">
+                   <div>${r.n}</div>
+                   <span class="craft-cost">Нужно: ${getRecipeCostHTML(r.res)}</span>
+                 </button>`; 
+        });
+      } else {
+          cr += `<div style="grid-column:1/-1; font-size:9px; color:#444; text-align:center; padding: 5px;">[ Продвинутый крафт доступен в Убежище ]</div>`;
       }
-      $('cook-actions').innerHTML = craftHtml;
+      $('cook-actions').innerHTML = cr;
+
+      // Действия
       $('local-actions').innerHTML = Object.entries(loc.acts).map(([id, n])=>`<button onclick="doAction('${id}')">${n}</button>`).join('');
       $('move-actions').innerHTML = Object.keys(window.WORLD).map(id=>`<button ${id===S.loc?'disabled':''} onclick="moveTo('${id}')">${window.WORLD[id].n}</button>`).join('');
     };
 
     window.doAction = function(a) {
-      if (a === 'use_fish') { if (S.fish > 0) { S.fish--; S.food = Math.min(100, S.food + 15); log("🐟 Съедена рыба."); } } 
-      else if (a === 'use_water_res') { if (S.water_res > 0) { S.water_res--; S.water = Math.min(100, S.water + 30); log("💧 Выпита вода."); } }
-      else if (a === 'rest') {
-        let hrs = Math.ceil((100 - S.energy) / 10);
-        for(let i=0; i<hrs; i++){ S.food=Math.max(0,S.food-2); S.water=Math.max(0,S.water-3); S.hp=Math.min(100,S.hp+2); S.psy=Math.min(100,S.psy+5); }
-        S.energy=100; S.totalHours+=hrs; log(`💤 Сон: ${hrs}ч.`);
+      if (a === 'use_flask') { if (S.flask > 0) { S.flask--; S.water = Math.min(100, S.water + 35); log("💧 Сделал глоток чистой воды."); } ui(); save(); return; }
+      if (a === 'rest') { if (S.energy >= 95) { log("💤 Вы не хотите спать."); return; } processTick(Math.ceil((100-S.energy)/10), true); S.energy=100; log("💤 Сон восстановил силы."); ui(); save(); return; }
+      if (a === 'radio') { processTick(1, true); S.psy = Math.min(100, S.psy+15); log("📻 Послушал шум эфира."); ui(); save(); return; }
+
+      processTick(1, false);
+      const w = window.GAME_EVENTS.weather[S.weatherId];
+      const h = (8 + S.totalHours) % 24;
+      const ph = (h < 6) ? window.GAME_EVENTS.dayPhases.night : (h < 12) ? window.GAME_EVENTS.dayPhases.morning : (h < 18) ? window.GAME_EVENTS.dayPhases.day : window.GAME_EVENTS.dayPhases.evening;
+      
+      const scavengeChance = w.mults.scavenge * ph.mults.scavenge;
+
+      if (a === 'burn_coal') { 
+          if (S.wood >= 2) { S.wood -= 2; S.coal++; log("🔥 Выжег древесный уголь."); } 
+          else { log("⚠️ Не хватает дров.", "bad"); }
       } else {
-        S.totalHours+=1;
-        if(a==='scavenge_rags') S.rags++; else if(a==='get_wood') S.wood+=2; else if(a==='fish') S.fish++; else if(a==='get_water') S.water_res++;
-        log(`📍 Действие: ${a}`);
-        S.food=Math.max(0,S.food-3); S.water=Math.max(0,S.water-4); S.energy=Math.max(0,S.energy-5);
+        if (Math.random() < scavengeChance || a === 'get_wood' || a === 'get_water') {
+          if(a==='scavenge_rags') { S.rags++; log("🧵 Нашел старую ветошь."); }
+          else if(a==='get_wood') { S.wood+=2; log("🪵 Нарубил дров."); }
+          else if(a==='fish') { S.raw_fish++; log("🐟 Поймал рыбу."); }
+          else if(a==='get_water') { S.dirty_water+=2; log("🪣 Набрал грязной воды."); }
+          else if(a==='scavenge_scrap') { S.scrap++; log("⚙️ Нашел металлолом."); }
+          else if(a==='forage_herbs') { if(Math.random()>0.5){S.herbs++;} else {S.berries++;} log("🌿 Нашел коренья/ягоды."); }
+          else if(a==='forage_mushrooms') { S.mushrooms++; S.rad+=5; log("🍄 Собрал фонящие грибы."); }
+          else if(a==='search_ruins' || a==='stalking') { 
+              S.scrap+=2; 
+              if(Math.random()>0.7) { S.filter++; log("📦 Чудо! Нашел рабочий фильтр."); }
+              else log("📦 Рискованный поиск принес плоды."); 
+          }
+        } else {
+            log("💨 Пусто. Поиск ничего не дал.", "bad");
+        }
       }
-      if(Math.random()<0.1) S.weatherId = Math.floor(Math.random()*window.GAME_EVENTS.weather.length);
+      
+      if(Math.random() < 0.15) S.weatherId = Math.floor(Math.random()*window.GAME_EVENTS.weather.length);
       ui(); save();
     };
 
-    window.moveTo = function(id) {
-      if(S.energy < 15) return;
-      S.loc=id; S.energy-=15; S.totalHours+=3; log(`➡️ Переход в ${window.WORLD[id].n} (3 ч.)`); ui(); save();
-    };
-
-    window.applyRecipe = function(id, cat) {
+    window.moveTo = id => { if(S.energy < 15) return; S.loc=id; processTick(3, false); log(`➡️ Переход в ${window.WORLD[id].n}`); ui(); save(); };
+    
+    window.applyRecipe = (id, cat) => {
       const r = window.RECIPES[cat][id]; if(!canCraft(id, cat)) return;
-      Object.entries(r.res).forEach(([resId, count]) => S[resId]-=count);
-      if(r.gain.food) S.food=Math.min(100, S.food+r.gain.food);
-      if(r.gain.hp) S.hp=Math.min(100, S.hp+r.gain.hp);
-      log(r.log); ui(); save();
+      Object.entries(r.res).forEach(([k, v]) => S[k]-=v);
+      if(r.items) Object.entries(r.items).forEach(([k, v]) => S[k]+=v);
+      if(r.gain) { S.food=Math.min(100,S.food+(r.gain.food||0)); S.hp=Math.min(100,S.hp+(r.gain.hp||0)); S.psy=Math.min(100,S.psy+(r.gain.psy||0)); S.water=Math.min(100,S.water+(r.gain.water||0)); S.rad=Math.max(0,S.rad+(r.gain.rad||0)); }
+      if(r.custom) r.custom(S); 
+      processTick(1, S.loc==='home'); log(r.log); ui(); save();
     };
 
-    window.log = (m, t='') => $('log').insertAdjacentHTML('afterbegin', `<div>[${Math.floor(S.totalHours/24)}д] ${m}</div>`);
+    window.log = (m, t='') => $('log').insertAdjacentHTML('afterbegin', `<div class="${t}">[${Math.floor(S.totalHours/24)}д] ${m}</div>`);
     window.save = () => { if(currentUser && S) db.collection('survival_v12').doc(currentUser.uid).set({S}); };
-    function init() { S={totalHours:8, hp:100, food:80, water:80, energy:100, psy:100, rad:0, loc:'home', fish:0, wood:5, rags:2, water_res:1, batteries:1, weatherId:0}; }
     window.resetGame = () => { if(confirm("Начать заново?")) { init(); ui(); save(); } };
 
     auth.onAuthStateChanged(user => {
       if(user) {
         currentUser = user; $('user-info').style.display='block'; $('login-btn').style.display='none';
-        const savedNick = localStorage.getItem('zone_nick'); if (savedNick) $('nick-input').value = savedNick;
+        const sn = localStorage.getItem('zone_nick'); if (sn) $('nick-input').value = sn;
         db.collection('survival_v12').doc(user.uid).get().then(d => {
           if(d.exists) S=d.data().S; else init();
+          // Проверка переменных
+          if (S.coal === undefined) { S.coal = 0; S.herbs = 0; S.berries = 0; S.mushrooms = 0; S.filter = 0; S.flask = 3; }
           ui(); startChat();
-          if(localStorage.getItem('zone_music') === 'on') {
-            window.addEventListener('click', () => { if(bgMusic.paused) { bgMusic.play(); musicBtn.textContent="[ ВКЛ ]"; musicBtn.style.color="#6f6"; } }, {once:true});
-          }
         });
       }
     });
