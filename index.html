@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>ЗОНА 1988: Build v16.12.15</title>
+  <title>ЗОНА 1988: Build v16.12.16</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/SanderElr/vptest/main/favicon.png">
   <style>
@@ -10,7 +10,7 @@
     .container{display:grid;grid-template-columns:320px 1fr;gap:15px;max-width:1300px;width:100%}
     .sidebar{display:flex;flex-direction:column;gap:10px;height:95vh}
     
-    /* АВТОРИЗАЦИЯ И ЧАТ (КЛАССИКА) */
+    /* ЧАТ И ИНТЕРФЕЙС */
     #auth-container { background: #1a1a1a; border: 1px solid #444; padding: 12px; }
     #user-info { display: none; margin-top: 10px; }
     #nick-input { background: #000; border: 1px solid #444; color: #6f6; width: 100%; padding: 5px; font-family: monospace; outline: none; }
@@ -25,7 +25,7 @@
     #chat-input { background: #000; border: none; color: #6f6; flex: 1; padding: 0 10px; font-family: monospace; outline: none; }
     #chat-send { background: #222; border: none; color: #6f6; width: 50px; cursor: pointer; }
 
-    /* ГЕЙМПЛЕЙ И ВРЕМЯ */
+    /* ГЕЙМПЛЕЙ */
     .game-panel { background: #111; padding: 20px; border: 1px solid #444; overflow-y: auto; height: 95vh; box-sizing: border-box; }
     .time-weather-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; font-size: 11px; background: #1a1a1a; padding: 10px; border: 1px solid #333; border-bottom: 2px solid #555; }
     .tw-item { color: #888; }
@@ -55,7 +55,7 @@
     button:hover:not(:disabled) { background: #252525; border-color: #6f6; }
     button:disabled { opacity: 0.3; cursor: not-allowed; color: #555; }
 
-    /* АРХИВ (Оригинальные стили из 16.12.6) */
+    /* МОДАЛКА АРХИВА */
     #archive-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; padding: 20px; box-sizing: border-box; }
     .archive-content { max-width: 800px; margin: 0 auto; background: #111; border: 1px solid #444; height: 90vh; display: flex; flex-direction: column; }
     .archive-header { padding: 15px; background: #222; border-bottom: 1px solid #444; display: flex; justify-content: space-between; align-items: center; }
@@ -66,22 +66,28 @@
 
   <div class="container">
     <div class="sidebar">
+      <div style="background: #1a1a1a; border: 1px solid #444; padding: 10px; display: flex; align-items: center; justify-content: space-between;">
+        <span style="font-size: 10px; color: #888;">СИГНАЛ:</span>
+        <button id="music-toggle" style="padding: 5px 10px; font-size: 10px; background: #222; color: #f66; border: 1px solid #444; cursor: pointer;">[ ВЫКЛ ]</button>
+      </div>
+      <audio id="bg-music" loop><source src="mus.mp3" type="audio/mpeg"></audio>
+
       <div id="auth-container">
-        <button id="login-btn" style="width:100%; text-align:center;">🔑 ВХОД GOOGLE</button>
+        <button id="login-btn" style="width:100%; text-align:center;">🔑 ВХОД В СИСТЕМУ</button>
         <div id="user-info">
           <div style="font-size: 10px; color: #888; margin-bottom:4px;">ПОЗЫВНОЙ:</div>
-          <input type="text" id="nick-input" maxlength="15" placeholder="Твой ник...">
+          <input type="text" id="nick-input" maxlength="15" placeholder="Ваш ник...">
         </div>
       </div>
       
       <div class="chat-box">
         <div id="chat-messages"></div>
         <div class="chat-input-row">
-          <input type="text" id="chat-input" placeholder="Введите сообщение..." maxlength="100">
+          <input type="text" id="chat-input" placeholder="Передача..." maxlength="100">
           <button id="chat-send">▶</button>
         </div>
       </div>
-      <button onclick="window.openArchive()" style="width:100%; margin-top:5px; font-size:10px; text-align:center;">📜 ОТКРЫТЬ АРХИВ ЧАТА</button>
+      <button onclick="window.openArchive()" style="width:100%; font-size:10px; text-align:center; background:#111;">📜 АРХИВ ПЕРЕГОВОРОВ</button>
     </div>
 
     <div class="game-panel">
@@ -94,7 +100,7 @@
 
       <div class="top-panel">
         <div class="loc-header"><span class="loc-name" id="cur-loc-name">...</span></div>
-        <div id="radio-display" class="radio-text">ПОИСК ЧАСТОТЫ...</div>
+        <div id="radio-display" class="radio-text">ПОИСК СИГНАЛА...</div>
       </div>
       
       <div class="stats-grid" id="stats"></div>
@@ -104,7 +110,7 @@
         <div id="loc-img"></div>
       </div>
       
-      <div class="title">🎒 ИНВЕНТАРЬ (Клик — использовать)</div>
+      <div class="title">🎒 ВЕЩИ (Клик — использовать)</div>
       <div id="inventory" class="inv-inline"></div>
       
       <div class="title">🛠️ СБОРКА И ГОТОВКА</div>
@@ -116,13 +122,13 @@
       <div class="title">🗺️ ПЕРЕХОД (3 ЧАСА)</div>
       <div id="move-actions" class="grid-2"></div>
       
-      <button style="width:100%; margin-top:40px; background:#300; color:#f66; border:1px solid #600; text-align:center" onclick="resetGame()">[ НАЧАТЬ ЗАНОВО ]</button>
+      <button style="width:100%; margin-top:40px; background:#300; color:#f66; border:1px solid #600; text-align:center" onclick="resetGame()">[ СБРОС ДАННЫХ ]</button>
     </div>
   </div>
 
   <div id="archive-modal">
     <div class="archive-content">
-      <div class="archive-header"><span style="color:#6f6;">АРХИВ ПЕРЕГОВОРОВ</span><button onclick="window.closeArchive()">[ X ]</button></div>
+      <div class="archive-header"><span style="color:#6f6;">АРХИВ</span><button onclick="window.closeArchive()">[ X ]</button></div>
       <div id="archive-list"></div>
     </div>
   </div>
@@ -135,124 +141,92 @@
   <script src="recipes.js"></script>
   <script src="radio.js"></script>
   <script src="events.js"></script>
-  
+
   <script>
     const firebaseConfig = { apiKey: "AIzaSyBeCXQduKrz67Cs1SnqFFEktxAaaYNfFho", authDomain: "vptest1-6a89d.firebaseapp.com", projectId: "vptest1-6a89d", appId: "1:452937918921:web:739b70ad20075896a1e018" };
     firebase.initializeApp(firebaseConfig);
-    
     window.auth = firebase.auth();
     window.db = firebase.firestore();
     window.$ = id => document.getElementById(id);
     window.currentUser = null;
     window.S = null;
 
-    // ==========================================
-    // ЛОГИКА ЧАТА (ОРИГИНАЛЬНАЯ ИЗ v16.12.6)
-    // ==========================================
-    let chatUnsub = null;
-
-    window.startChat = function() {
-      if (chatUnsub) chatUnsub();
-      
-      chatUnsub = window.db.collection('messages').orderBy('createdAt', 'asc').limitToLast(25).onSnapshot(snap => {
-        const myNick = window.$('nick-input').value.trim();
-        const chatContainer = window.$('chat-messages');
-        chatContainer.innerHTML = '';
-        
-        snap.forEach(doc => {
-          const m = doc.data(); 
-          if (!m.name) return;
-
-          const authorName = m.name.trim();
-          const isItMe = (myNick !== "" && authorName === myNick);
-          const isMentioned = (myNick !== "" && m.text.includes(`@${myNick}`));
-
-          let msgClasses = "chat-msg";
-          
-          if (isItMe || isMentioned) {
-            msgClasses += " chat-msg-highlight"; 
-            if (isMentioned && !isItMe) {
-              msgClasses += " chat-msg-mention-alt"; 
-            }
-          }
-
-          const nameClass = isItMe ? "chat-name-self" : "chat-name";
-
-          chatContainer.innerHTML += `
-            <div class="${msgClasses}">
-              <span class="${nameClass}" onclick="window.mention('${authorName}')">${authorName}:</span> 
-              <span>${m.text}</span>
-            </div>`;
-        });
-        
-        chatContainer.scrollTop = chatContainer.scrollHeight;
-      });
-    }
-
-    window.sendChatMsg = function() { 
-      const input = window.$('chat-input');
-      const text = input.value.trim(); 
-      const nickname = window.$('nick-input').value.trim() || window.currentUser.displayName.split(' ')[0]; 
-      
-      if (text && window.currentUser) { 
-        window.db.collection('messages').add({
-          name: nickname, 
-          text: text, 
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        }); 
-        input.value = ''; 
+    // --- МУЗЫКА ---
+    const bgMusic = $('bg-music');
+    const musicBtn = $('music-toggle');
+    bgMusic.volume = 0.4;
+    
+    musicBtn.onclick = () => {
+      if (bgMusic.paused) {
+        bgMusic.play();
+        musicBtn.textContent = "[ ВКЛ ]"; musicBtn.style.color = "#6f6";
+        localStorage.setItem('zone_music', 'on');
+      } else {
+        bgMusic.pause();
+        musicBtn.textContent = "[ ВЫКЛ ]"; musicBtn.style.color = "#f66";
+        localStorage.setItem('zone_music', 'off');
       }
-    }
-
-    window.mention = function(name) { 
-      const input = window.$('chat-input'); 
-      input.value = `@${name}, ${input.value}`; 
-      input.focus(); 
-    }
-
-    window.openArchive = function() {
-      window.$('archive-modal').style.display = 'block';
-      window.db.collection('messages').orderBy('createdAt', 'desc').limit(100).get().then(snap => {
-        window.$('archive-list').innerHTML = snap.docs.map(doc => {
-          const m = doc.data();
-          return `<div style="margin-bottom:5px; border-bottom:1px solid #222; padding:3px;"><strong>${m.name}:</strong> ${m.text}</div>`;
-        }).join('');
-      });
-    }
-
-    window.closeArchive = function() { 
-      window.$('archive-modal').style.display = 'none'; 
-    }
-
-    // Слушатели для чата
-    window.$('chat-send').onclick = window.sendChatMsg;
-    window.$('chat-input').onkeypress = e => { if (e.key === 'Enter') window.sendChatMsg(); };
-    window.$('nick-input').onchange = e => { 
-      localStorage.setItem('zone_nick', e.target.value); 
-      window.startChat(); 
     };
 
-    // ==========================================
-    // ЛОГИКА ГЕЙМПЛЕЯ
-    // ==========================================
+    // --- ЧАТ (ИЗ 16.12.6) ---
+    let chatUnsub = null;
+    window.startChat = function() {
+      if (chatUnsub) chatUnsub();
+      chatUnsub = db.collection('messages').orderBy('createdAt', 'asc').limitToLast(25).onSnapshot(snap => {
+        const myNick = $('nick-input').value.trim();
+        const chatContainer = $('chat-messages');
+        chatContainer.innerHTML = '';
+        snap.forEach(doc => {
+          const m = doc.data(); if (!m.name) return;
+          const isItMe = (myNick && m.name.trim() === myNick);
+          const isMentioned = (myNick && m.text.includes(`@${myNick}`));
+          let msgClasses = "chat-msg";
+          if (isItMe || isMentioned) msgClasses += " chat-msg-highlight";
+          if (isMentioned && !isItMe) msgClasses += " chat-msg-mention-alt";
+          chatContainer.innerHTML += `<div class="${msgClasses}"><span class="${isItMe?'chat-name-self':'chat-name'}" onclick="window.mention('${m.name.trim()}')">${m.name}:</span> <span>${m.text}</span></div>`;
+        });
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+      });
+    };
+
+    window.sendChatMsg = function() {
+      const input = $('chat-input');
+      const text = input.value.trim();
+      const nick = $('nick-input').value.trim() || currentUser.displayName.split(' ')[0];
+      if (text && currentUser) {
+        db.collection('messages').add({ name: nick, text: text, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+        input.value = '';
+      }
+    };
+
+    window.mention = n => { const i = $('chat-input'); i.value = `@${n}, ${i.value}`; i.focus(); };
+    window.openArchive = () => {
+      $('archive-modal').style.display='block';
+      db.collection('messages').orderBy('createdAt', 'desc').limit(100).get().then(snap => {
+        $('archive-list').innerHTML = snap.docs.map(doc => {
+          const m = doc.data(); return `<div style="padding:5px; border-bottom:1px solid #222;"><b>${m.name}:</b> ${m.text}</div>`;
+        }).join('');
+      });
+    };
+    window.closeArchive = () => $('archive-modal').style.display='none';
+
+    // --- ГЕЙМПЛЕЙ ---
     window.ui = function() {
       if(!S) return;
       const loc = window.WORLD[S.loc] || window.WORLD.home;
-      
       const startDay = new Date(1988, 11, 26);
-      const currentMs = startDay.getTime() + (S.totalHours * 3600000);
-      const currDate = new Date(currentMs);
+      const currDate = new Date(startDay.getTime() + (S.totalHours * 3600000));
       const h = currDate.getHours();
       
       $('display-date').textContent = currDate.toLocaleDateString('ru-RU');
       $('display-time').textContent = (h < 10 ? '0'+h : h) + ':00';
       
-      let phase = window.GAME_EVENTS.dayPhases.day;
-      if (h >= 0 && h < 6) phase = window.GAME_EVENTS.dayPhases.night;
-      else if (h >= 6 && h < 12) phase = window.GAME_EVENTS.dayPhases.morning;
-      else if (h >= 18 && h < 24) phase = window.GAME_EVENTS.dayPhases.evening;
+      let ph = window.GAME_EVENTS.dayPhases.day;
+      if (h < 6) ph = window.GAME_EVENTS.dayPhases.night;
+      else if (h < 12) ph = window.GAME_EVENTS.dayPhases.morning;
+      else if (h >= 18) ph = window.GAME_EVENTS.dayPhases.evening;
       
-      $('display-phase').textContent = phase.n;
+      $('display-phase').textContent = ph.n;
       $('display-weather').textContent = window.GAME_EVENTS.weather[S.weatherId].n;
       $('cur-loc-name').textContent = loc.n;
       $('radio-display').textContent = window.getRandomRadioMessage ? window.getRandomRadioMessage() : "...";
@@ -265,81 +239,66 @@
 
       let craftHtml = '';
       if(window.RECIPES) {
-          Object.entries(window.RECIPES.craft).forEach(([id, r]) => {
-              const disabled = !canCraft(id, 'craft') ? 'disabled' : '';
-              craftHtml += `<button ${disabled} onclick="applyRecipe('${id}', 'craft')">${r.n}</button>`;
-          });
-          if (S.loc === 'home') {
-              Object.entries(window.RECIPES.cooking).forEach(([id, r]) => {
-                  const disabled = !canCraft(id, 'cooking') ? 'disabled' : '';
-                  craftHtml += `<button ${disabled} onclick="applyRecipe('${id}', 'cooking')">${r.n}</button>`;
-              });
-          } else { craftHtml += `<div style="grid-column: 1/-1; font-size:10px; color:#444; padding:5px;">Сложные рецепты доступны в Убежище</div>`; }
+        Object.entries(window.RECIPES.craft).forEach(([id, r]) => { craftHtml += `<button ${!canCraft(id,'craft')?'disabled':''} onclick="applyRecipe('${id}','craft')">${r.n}</button>`; });
+        if (S.loc==='home') Object.entries(window.RECIPES.cooking).forEach(([id, r]) => { craftHtml += `<button ${!canCraft(id,'cooking')?'disabled':''} onclick="applyRecipe('${id}','cooking')">${r.n}</button>`; });
       }
       $('cook-actions').innerHTML = craftHtml;
-
       $('local-actions').innerHTML = Object.entries(loc.acts).map(([id, n])=>`<button onclick="doAction('${id}')">${n}</button>`).join('');
       $('move-actions').innerHTML = Object.keys(window.WORLD).map(id=>`<button ${id===S.loc?'disabled':''} onclick="moveTo('${id}')">${window.WORLD[id].n}</button>`).join('');
-    }
+    };
 
     window.doAction = function(a) {
-      if (a === 'use_fish') { if (S.fish > 0) { S.fish--; S.food = Math.min(100, S.food + 15); log("🐟 Вы съели сырую рыбу."); } } 
-      else if (a === 'use_water_res') { if (S.water_res > 0) { S.water_res--; S.water = Math.min(100, S.water + 30); log("💧 Вы выпили воды."); } }
+      if (a === 'use_fish') { if (S.fish > 0) { S.fish--; S.food = Math.min(100, S.food + 15); log("🐟 Съедена рыба."); } } 
+      else if (a === 'use_water_res') { if (S.water_res > 0) { S.water_res--; S.water = Math.min(100, S.water + 30); log("💧 Выпита вода."); } }
       else if (a === 'rest') {
-        if (S.energy >= 100) { log("💤 Вы не хотите спать."); return; }
-        let hours = Math.ceil((100 - S.energy) / 10);
-        for (let i = 0; i < hours; i++) { S.food = Math.max(0, S.food - 2); S.water = Math.max(0, S.water - 3); S.hp = Math.min(100, S.hp + 2); S.psy = Math.min(100, S.psy + 5); }
-        S.energy = 100; S.totalHours += hours; log(`💤 Сон длился ${hours} ч. Психика и силы восстановлены.`);
+        let hrs = Math.ceil((100 - S.energy) / 10);
+        for(let i=0; i<hrs; i++){ S.food=Math.max(0,S.food-2); S.water=Math.max(0,S.water-3); S.hp=Math.min(100,S.hp+2); S.psy=Math.min(100,S.psy+5); }
+        S.energy=100; S.totalHours+=hrs; log(`💤 Сон: ${hrs}ч.`);
       } else {
-        S.totalHours += 1;
-        if(a==='scavenge_rags') S.rags++;
-        else if(a==='get_wood') S.wood+=2;
-        else if(a==='fish') S.fish++;
-        else if(a==='get_water') S.water_res++;
-        else if(a==='scavenge_tech') { if(Math.random()>0.5) S.batteries++; }
-        log(`📍 Выполнено действие: ${a}`);
-        S.food = Math.max(0, S.food-3); S.water = Math.max(0, S.water-4); S.energy = Math.max(0, S.energy-5); S.psy = Math.max(0, S.psy-1);
+        S.totalHours+=1;
+        if(a==='scavenge_rags') S.rags++; else if(a==='get_wood') S.wood+=2; else if(a==='fish') S.fish++; else if(a==='get_water') S.water_res++;
+        log(`📍 Действие: ${a}`);
+        S.food=Math.max(0,S.food-3); S.water=Math.max(0,S.water-4); S.energy=Math.max(0,S.energy-5);
       }
-      if (Math.random() < 0.1) S.weatherId = Math.floor(Math.random() * window.GAME_EVENTS.weather.length);
+      if(Math.random()<0.1) S.weatherId = Math.floor(Math.random()*window.GAME_EVENTS.weather.length);
       ui(); save();
-    }
+    };
 
-    window.moveTo = function(id) { 
-      if(S.energy < 15) { log("⚡ Слишком мало сил для перехода.", "bad"); return; }
-      S.loc = id; S.energy -= 15; S.totalHours += 3; S.food = Math.max(0, S.food - 5);
-      log(`➡️ Переход в ${window.WORLD[id].n} занял 3 часа.`); ui(); save(); 
-    }
+    window.moveTo = function(id) {
+      if(S.energy < 15) return;
+      S.loc=id; S.energy-=15; S.totalHours+=3; log(`➡️ Переход в ${window.WORLD[id].n} (3 ч.)`); ui(); save();
+    };
 
     window.applyRecipe = function(id, cat) {
-      const r = window.RECIPES[cat][id];
-      if (!canCraft(id, cat)) return;
-      Object.entries(r.res).forEach(([resId, count]) => { S[resId] -= count; });
-      if (r.gain.food) S.food = Math.min(100, S.food + r.gain.food);
-      if (r.gain.hp) S.hp = Math.min(100, S.hp + r.gain.hp);
-      if (r.gain.psy) S.psy = Math.min(100, S.psy + r.gain.psy);
+      const r = window.RECIPES[cat][id]; if(!canCraft(id, cat)) return;
+      Object.entries(r.res).forEach(([resId, count]) => S[resId]-=count);
+      if(r.gain.food) S.food=Math.min(100, S.food+r.gain.food);
+      if(r.gain.hp) S.hp=Math.min(100, S.hp+r.gain.hp);
       log(r.log); ui(); save();
     };
 
-    window.log = function(m, t='') { $('log').insertAdjacentHTML('afterbegin', `<div class="${t}">[${Math.floor(S.totalHours/24)}д] ${m}</div>`); }
-    window.save = function() { if(currentUser && S) db.collection('survival_v12').doc(currentUser.uid).set({S}); }
+    window.log = (m, t='') => $('log').insertAdjacentHTML('afterbegin', `<div>[${Math.floor(S.totalHours/24)}д] ${m}</div>`);
+    window.save = () => { if(currentUser && S) db.collection('survival_v12').doc(currentUser.uid).set({S}); };
     function init() { S={totalHours:8, hp:100, food:80, water:80, energy:100, psy:100, rad:0, loc:'home', fish:0, wood:5, rags:2, water_res:1, batteries:1, weatherId:0}; }
-    window.resetGame = function() { if(confirm("Начать заново?")) { init(); ui(); save(); } }
+    window.resetGame = () => { if(confirm("Начать заново?")) { init(); ui(); save(); } };
 
     auth.onAuthStateChanged(user => {
       if(user) {
         currentUser = user; $('user-info').style.display='block'; $('login-btn').style.display='none';
-        
-        // Восстановление ника
-        const savedNick = localStorage.getItem('zone_nick');
-        if (savedNick) $('nick-input').value = savedNick;
-
+        const savedNick = localStorage.getItem('zone_nick'); if (savedNick) $('nick-input').value = savedNick;
         db.collection('survival_v12').doc(user.uid).get().then(d => {
           if(d.exists) S=d.data().S; else init();
-          ui(); 
-          window.startChat(); // Запуск чата!
+          ui(); startChat();
+          if(localStorage.getItem('zone_music') === 'on') {
+            window.addEventListener('click', () => { if(bgMusic.paused) { bgMusic.play(); musicBtn.textContent="[ ВКЛ ]"; musicBtn.style.color="#6f6"; } }, {once:true});
+          }
         });
       }
     });
+
+    $('chat-send').onclick = window.sendChatMsg;
+    $('chat-input').onkeypress = e => { if(e.key==='Enter') window.sendChatMsg(); };
+    $('nick-input').onchange = e => { localStorage.setItem('zone_nick', e.target.value); startChat(); };
     $('login-btn').onclick = () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
   </script>
 </body>
