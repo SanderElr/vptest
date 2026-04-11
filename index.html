@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>ЗОНА 1988: v16.12.3 (Modular)</title>
+  <title>ЗОНА 1988: v16.12.5</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/SanderElr/vptest/main/favicon.png">
   <style>
@@ -10,49 +10,55 @@
     .container{display:grid;grid-template-columns:320px 1fr;gap:15px;max-width:1300px;width:100%}
     .sidebar{display:flex;flex-direction:column;gap:10px;height:95vh}
     
-    /* АВТОРИЗАЦИЯ И НИКНЕЙМ */
+    /* АВТОРИЗАЦИЯ */
     #auth-container { background: #1a1a1a; border: 1px solid #444; padding: 12px; }
     #user-info { display: none; margin-top: 10px; }
     #nick-input { background: #000; border: 1px solid #444; color: #6f6; width: 100%; padding: 5px; font-family: monospace; outline: none; }
     
-    /* ЧАТ */
+    /* ЧАТ И ВЫДЕЛЕНИЯ */
     .chat-box { background: #000; border: 1px solid #333; display: flex; flex-direction: column; flex: 1; min-height: 350px; overflow: hidden; }
     #chat-messages { flex: 1; overflow-y: auto; font-size: 12px; padding: 10px; border-bottom: 1px solid #222; background: #050505;}
-    .chat-msg { margin-bottom: 8px; border-bottom: 1px solid #111; padding: 6px; word-break: break-word; }
+    .chat-msg { margin-bottom: 8px; border-bottom: 1px solid #111; padding: 6px; word-break: break-word; border-left: 3px solid transparent; }
     
-    /* НОВЫЕ СТИЛИ ВЫДЕЛЕНИЯ ЧАТА */
+    /* Стили для логики чата (зеленый ник и светлая подложка) */
     .chat-name { color: #fd6; font-weight: bold; cursor: pointer; text-decoration: underline dotted; }
     .chat-name-self { color: #00ff00 !important; font-weight: bold; cursor: pointer; }
-    .chat-msg-highlight { background: #1a1a1a !important; border-left: 3px solid #00ff00; }
-    .chat-msg-mention-alt { border-left-color: #fd6; }
+    .chat-msg-highlight { background: #1a1a1a !important; border-left-color: #00ff00; }
+    .chat-msg-mention-alt { border-left-color: #fd6 !important; }
 
     .chat-input-row { display: flex; background: #111; height: 40px; }
     #chat-input { background: #000; border: none; color: #6f6; flex: 1; padding: 0 10px; font-family: monospace; outline: none; }
     #chat-send { background: #222; border: none; color: #6f6; width: 50px; cursor: pointer; }
 
-    /* МОДАЛЬНОЕ ОКНО АРХИВА */
+    /* ИГРОВОЙ ИНТЕРФЕЙС (ЛОГ И КАРТИНКА) */
+    .game-panel { background: #111; padding: 20px; border: 1px solid #444; overflow-y: auto; height: 95vh; box-sizing: border-box; }
+    .loc-header { background: #222; padding: 15px; border: 1px solid #444; text-align: center; margin-bottom: 15px; border-left: 5px solid #f44; }
+    .loc-name { font-size: 20px; color: #fff; font-weight: bold; text-transform: uppercase; }
+    
+    .log-row { display: flex; gap: 10px; height: 180px; margin-bottom: 15px; }
+    #log { flex: 1; overflow-y: auto; background: #000; border: 1px solid #333; padding: 10px; font-size: 12px; color: #ccc; }
+    #loc-img { width: 180px; height: 180px; background: #050505; border: 1px solid #444; background-size: cover; background-position: center; image-rendering: pixelated; }
+
+    .stats-emoji { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-bottom: 15px; }
+    .s-item { background: #050505; border: 1px solid #333; padding: 8px 2px; text-align: center; border-radius: 4px; border-bottom: 2px solid #444; }
+    .s-val { font-size: 11px; font-weight: bold; color: #fff; display: block;}
+    
+    .title { color: #555; border-bottom: 1px solid #333; margin: 25px 0 10px; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .inv-inline { background: #0a0a0a; padding: 10px; border: 1px solid #222; font-size: 12px; margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 12px; color: #6f6; min-height: 40px;}
+    
+    button { background: #1a1a1a; color: #d4c4a8; border: 1px solid #444; padding: 12px; cursor: pointer; font-family: monospace; text-align: left; outline: none; }
+    button:hover:not(:disabled) { background: #252525; border-color: #6f6; }
+    button:disabled { opacity: 0.3; cursor: not-allowed; }
+    
+    /* АРХИВ ЧАТА */
     #archive-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; padding: 20px; box-sizing: border-box; }
     .archive-content { max-width: 800px; margin: 0 auto; background: #111; border: 1px solid #444; height: 90vh; display: flex; flex-direction: column; }
     .archive-header { padding: 15px; background: #222; border-bottom: 1px solid #444; display: flex; justify-content: space-between; align-items: center; }
     #archive-list { flex-grow: 1; overflow-y: auto; padding: 20px; font-size: 13px; color: #ccc; }
 
-    /* ИГРОВАЯ ПАНЕЛЬ */
-    .game-panel { background: #111; padding: 20px; border: 1px solid #444; overflow-y: auto; height: 95vh; box-sizing: border-box; }
-    .loc-header { background: #222; padding: 15px; border: 1px solid #444; text-align: center; margin-bottom: 15px; border-left: 5px solid #f44; }
-    .loc-name { font-size: 20px; color: #fff; font-weight: bold; text-transform: uppercase; }
-    .stats-emoji { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-bottom: 15px; }
-    .s-item { background: #050505; border: 1px solid #333; padding: 8px 2px; text-align: center; border-radius: 4px; border-bottom: 2px solid #444; }
-    .s-val { font-size: 11px; font-weight: bold; color: #fff; display: block;}
-    .log-container { display: flex; gap: 10px; margin-bottom: 15px; align-items: stretch; }
-    #log { flex-grow: 1; height: 160px; overflow-y: auto; background: #000; border: 1px solid #333; padding: 10px; font-size: 12px; color: #ccc; }
-    .title { color: #555; border-bottom: 1px solid #333; margin: 25px 0 10px; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; }
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .inv-inline { background: #0a0a0a; padding: 10px; border: 1px solid #222; font-size: 12px; margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 12px; color: #6f6; min-height: 40px;}
-    
-    button { background: #1a1a1a; color: #d4c4a8; border: 1px solid #444; padding: 12px; cursor: pointer; font-family: monospace; text-align: left; }
-    button:hover:not(:disabled) { background: #252525; border-color: #6f6; }
-    button:disabled { opacity: 0.3; cursor: not-allowed; }
     .version-footer { text-align: center; color: #333; font-size: 10px; margin-top: 20px; padding: 10px; border-top: 1px solid #1a1a1a; text-transform: uppercase; }
+    .bad { color: #f44; }
   </style>
 </head>
 <body>
@@ -60,7 +66,7 @@
   <div class="container">
     <div class="sidebar">
       <div id="auth-container">
-        <button id="login-btn" style="width:100%">🔑 ВХОД GOOGLE</button>
+        <button id="login-btn" style="width:100%; text-align:center;">🔑 ВХОД GOOGLE</button>
         <div id="user-info">
           <div style="font-size: 10px; color: #888;">ПОЗЫВНОЙ:</div>
           <input type="text" id="nick-input" maxlength="15" placeholder="Твой ник...">
@@ -77,34 +83,49 @@
     </div>
 
     <div class="game-panel">
-      <div class="loc-header"><span class="loc-name" id="cur-loc-name">ЗАГРУЗКА...</span></div>
+      <div class="loc-header"><span class="loc-name" id="cur-loc-name">УСТАНОВКА СВЯЗИ...</span></div>
+      
       <div class="stats-emoji" id="stats"></div>
-      <div class="log-container"><div id="log"></div></div>
+      
+      <div class="log-row">
+        <div id="log"></div>
+        <div id="loc-img"></div>
+      </div>
+      
       <div class="title">🎒 ИНВЕНТАРЬ</div>
       <div id="inventory" class="inv-inline"></div>
+      
       <div class="title">📍 ДЕЙСТВИЯ</div>
       <div id="local-actions" class="grid-2"></div>
+      
       <div class="title">🗺️ КАРТА ЗОНЫ</div>
       <div id="move-actions" class="grid-2"></div>
+      
       <div class="title">🍳 ГОТОВКА</div>
       <div id="cook-actions" class="grid-2"></div>
+      
       <div class="title">💊 МЕДИЦИНА</div>
       <div id="med-actions" class="grid-2"></div>
+      
       <button style="width:100%; margin-top:40px; background:#300; color:#f66; border:1px solid #600; text-align:center" onclick="resetGame()">[ НАЧАТЬ ЗАНОВО ]</button>
-      <div class="version-footer">ЗОНА 1988: Build v16.12.3 // SanderElr</div>
+      <div class="version-footer">ЗОНА 1988: Build v16.12.5 // SanderElr</div>
     </div>
   </div>
 
   <div id="archive-modal">
     <div class="archive-content">
       <div class="archive-header"><span style="color:#6f6;">АРХИВ ПЕРЕГОВОРОВ</span><button onclick="closeArchive()">[ X ]</button></div>
-      <div id="archive-list">Загрузка истории...</div>
+      <div id="archive-list"></div>
     </div>
   </div>
 
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+  <script src="world.js"></script>
+  <script src="chat.js"></script>
+  <script src="recipes.js"></script>
 
   <script>
     const firebaseConfig = { apiKey: "AIzaSyBeCXQduKrz67Cs1SnqFFEktxAaaYNfFho", authDomain: "vptest1-6a89d.firebaseapp.com", projectId: "vptest1-6a89d", appId: "1:452937918921:web:739b70ad20075896a1e018" };
@@ -116,51 +137,50 @@
     window.currentUser = null;
     window.S = null;
 
-    const WORLD = {
-      home: { n:'🏠 Убежище', acts: { 'rest': '💤 Сон', 'radio': '📻 Радио' } },
-      city: { n:'🏙️ Город', acts: { 'scavenge_rags': '🧵 Искать ветошь' } },
-      forest: { n:'🌲 Лес', acts: { 'get_wood': '🪵 Рубить дрова' } },
-      wasteland: { n:'☢️ Пустошь', acts: { 'scavenge_tech': '🔋 Искать детали' } },
-      river: { n:'🌊 Берег реки', acts: { 'fish': '🐟 Рыбачить' } },
-      swamp: { n:'🍄 Болото', acts: { 'get_water': '💧 Набрать воды' } }
-    };
-
     window.ui = function() {
       if(!S) return;
-      const loc = WORLD[S.loc] || WORLD.home;
+      const loc = window.WORLD[S.loc] || window.WORLD.home;
       $('cur-loc-name').textContent = loc.n;
-      $('stats').innerHTML = [['❤️', S.hp], ['🍞', S.food], ['💧', S.water], ['⚡', S.energy], ['☢️', S.rad], ['📅', S.day]].map(s=>`<div class="s-item"><span>${s[0]}</span><span class="s-val">${s[1]}</span></div>`).join('');
+      
+      // Обновление изображения локации
+      $('loc-img').style.backgroundImage = `url('${loc.img || ""}')`;
+      
+      $('stats').innerHTML = [
+        ['❤️', S.hp], ['🍞', S.food], ['💧', S.water], 
+        ['⚡', S.energy], ['☢️', S.rad], ['📅', S.day]
+      ].map(s=>`<div class="s-item"><span>${s[0]}</span><span class="s-val">${s[1]}</span></div>`).join('');
+      
       const invItems = [['fish','🐟'],['wood','🪵'],['rags','🧵'],['water_res','💧'],['batteries','🔋']];
       $('inventory').innerHTML = invItems.map(i=>S[i[0]]>0?`<span>${i[1]} ${S[i[0]]}</span>`:'').join(' ');
       
       $('local-actions').innerHTML = Object.entries(loc.acts).map(([id, n])=>`<button onclick="doAction('${id}')">${n}</button>`).join('');
-      $('move-actions').innerHTML = Object.keys(WORLD).map(id=>`<button ${id===S.loc?'disabled':''} onclick="moveTo('${id}')">${WORLD[id].n}</button>`).join('');
+      $('move-actions').innerHTML = Object.keys(window.WORLD).map(id=>`<button ${id===S.loc?'disabled':''} onclick="moveTo('${id}')">${window.WORLD[id].n}</button>`).join('');
       
       $('cook-actions').innerHTML = `<button onclick="craft('fish')">Жарить рыбу (1🐟 1🪵)</button>`;
       $('med-actions').innerHTML = `<button onclick="craft('med')">Стерильный бинт (2🧵 1💧)</button>`;
     }
 
     window.doAction = function(a) {
-      if(a==='rest') { S.day++; S.hp=Math.min(100, S.hp+20); S.energy=100; log("💤 Отдохнул."); }
-      else if(a==='scavenge_rags') { S.rags++; log("🧵 Нашел тряпки."); }
-      else if(a==='get_wood') { S.wood+=2; log("🪵 Собрал дрова."); }
-      else if(a==='fish') { S.fish++; log("🐟 Поймал карася."); }
-      else if(a==='get_water') { S.water_res++; log("💧 Набрал воды."); }
-      else if(a==='scavenge_tech') { if(Math.random()>0.5){S.batteries++; log("🔋 Нашел батарейку!");} else log("⚙️ Пусто."); }
-      else if(a==='radio') { if(S.batteries>0){S.batteries--; log("📻 Слышны помехи...");} else log("🔋 Нет питания."); }
+      if(a==='rest') { S.day++; S.hp=Math.min(100, S.hp+20); S.energy=100; log("💤 Отдохнул в безопасности."); }
+      else if(a==='scavenge_rags') { S.rags++; log("🧵 Нашел пригодную ветошь."); }
+      else if(a==='get_wood') { S.wood+=2; log("🪵 Набрал дров для костра."); }
+      else if(a==='fish') { S.fish++; log("🐟 Выловил что-то съедобное."); }
+      else if(a==='get_water') { S.water_res++; log("💧 Набрал мутной воды."); }
+      else if(a==='scavenge_tech') { if(Math.random()>0.5){S.batteries++; log("🔋 Нашел старую батарейку.");} else log("⚙️ Среди обломков ничего ценного."); }
+      else if(a==='radio') { if(S.batteries>0){S.batteries--; log("📻 Сквозь треск слышны голоса...");} else log("🔋 Питание отсутствует."); }
       S.food=Math.max(0, S.food-5); S.energy=Math.max(0, S.energy-2); ui(); save();
     }
 
     window.moveTo = function(id) { 
-      if(S.energy < 10) { log("⚡ Нет сил идти.", "bad"); return; }
-      S.loc=id; S.energy-=10; log(`➡️ Переход: ${WORLD[id].n}`); ui(); save(); 
+      if(S.energy < 10) { log("⚡ Сил совсем нет. Нужно отдохнуть.", "bad"); return; }
+      S.loc=id; S.energy-=10; log(`➡️ Переход завершен: ${window.WORLD[id].n}`); ui(); save(); 
     }
 
     window.log = function(m, t='') { $('log').insertAdjacentHTML('afterbegin', `<div class="${t}">[День ${S.day}] ${m}</div>`); }
     window.save = function() { if(currentUser && S) db.collection('survival_v12').doc(currentUser.uid).set({S}); }
 
     function init() { S={day:1,hp:100,food:80,water:80,energy:100,rad:0,psy:100,loc:'home',fish:0,wood:5,rags:2,water_res:1,batteries:1}; }
-    window.resetGame = function() { if(confirm("Начать заново?")) { init(); ui(); save(); } }
+    window.resetGame = function() { if(confirm("Начать новую жизнь? Весь прогресс будет стерт.")) { init(); ui(); save(); } }
 
     auth.onAuthStateChanged(user => {
       if(user) {
@@ -176,9 +196,5 @@
 
     $('login-btn').onclick = () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
   </script>
-
-  <script src="chat.js"></script>
-  <script src="recipes.js"></script>
-
 </body>
 </html>
