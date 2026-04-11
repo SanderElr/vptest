@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>ЗОНА 1988: v16.12.5</title>
+  <title>ЗОНА 1988: v16.12.6</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/SanderElr/vptest/main/favicon.png">
   <style>
@@ -15,12 +15,10 @@
     #user-info { display: none; margin-top: 10px; }
     #nick-input { background: #000; border: 1px solid #444; color: #6f6; width: 100%; padding: 5px; font-family: monospace; outline: none; }
     
-    /* ЧАТ И ВЫДЕЛЕНИЯ */
+    /* ЧАТ */
     .chat-box { background: #000; border: 1px solid #333; display: flex; flex-direction: column; flex: 1; min-height: 350px; overflow: hidden; }
     #chat-messages { flex: 1; overflow-y: auto; font-size: 12px; padding: 10px; border-bottom: 1px solid #222; background: #050505;}
     .chat-msg { margin-bottom: 8px; border-bottom: 1px solid #111; padding: 6px; word-break: break-word; border-left: 3px solid transparent; }
-    
-    /* Стили для логики чата (зеленый ник и светлая подложка) */
     .chat-name { color: #fd6; font-weight: bold; cursor: pointer; text-decoration: underline dotted; }
     .chat-name-self { color: #00ff00 !important; font-weight: bold; cursor: pointer; }
     .chat-msg-highlight { background: #1a1a1a !important; border-left-color: #00ff00; }
@@ -30,11 +28,15 @@
     #chat-input { background: #000; border: none; color: #6f6; flex: 1; padding: 0 10px; font-family: monospace; outline: none; }
     #chat-send { background: #222; border: none; color: #6f6; width: 50px; cursor: pointer; }
 
-    /* ИГРОВОЙ ИНТЕРФЕЙС (ЛОГ И КАРТИНКА) */
+    /* ИГРОВОЙ ИНТЕРФЕЙС (ОБНОВЛЕНО) */
     .game-panel { background: #111; padding: 20px; border: 1px solid #444; overflow-y: auto; height: 95vh; box-sizing: border-box; }
-    .loc-header { background: #222; padding: 15px; border: 1px solid #444; text-align: center; margin-bottom: 15px; border-left: 5px solid #f44; }
-    .loc-name { font-size: 20px; color: #fff; font-weight: bold; text-transform: uppercase; }
     
+    /* НОВАЯ ВЕРХНЯЯ ПАНЕЛЬ С РАДИО */
+    .top-panel { display: flex; gap: 10px; margin-bottom: 15px; align-items: stretch; }
+    .loc-header { background: #222; padding: 10px 15px; border: 1px solid #444; border-left: 5px solid #f44; display: flex; align-items: center; justify-content: center; min-width: 140px; }
+    .loc-name { font-size: 14px; color: #fff; font-weight: bold; text-transform: uppercase; }
+    .radio-text { flex: 1; background: #050505; border: 1px solid #333; color: #6a9c6a; font-size: 12px; padding: 10px; display: flex; align-items: center; font-style: italic; text-shadow: 0 0 2px rgba(100,255,100,0.2); }
+
     .log-row { display: flex; gap: 10px; height: 180px; margin-bottom: 15px; }
     #log { flex: 1; overflow-y: auto; background: #000; border: 1px solid #333; padding: 10px; font-size: 12px; color: #ccc; }
     #loc-img { width: 180px; height: 180px; background: #050505; border: 1px solid #444; background-size: cover; background-position: center; image-rendering: pixelated; }
@@ -83,7 +85,10 @@
     </div>
 
     <div class="game-panel">
-      <div class="loc-header"><span class="loc-name" id="cur-loc-name">УСТАНОВКА СВЯЗИ...</span></div>
+      <div class="top-panel">
+        <div class="loc-header"><span class="loc-name" id="cur-loc-name">СВЯЗЬ...</span></div>
+        <div id="radio-display" class="radio-text">ПОИСК ЧАСТОТЫ...</div>
+      </div>
       
       <div class="stats-emoji" id="stats"></div>
       
@@ -108,7 +113,7 @@
       <div id="med-actions" class="grid-2"></div>
       
       <button style="width:100%; margin-top:40px; background:#300; color:#f66; border:1px solid #600; text-align:center" onclick="resetGame()">[ НАЧАТЬ ЗАНОВО ]</button>
-      <div class="version-footer">ЗОНА 1988: Build v16.12.5 // SanderElr</div>
+      <div class="version-footer">ЗОНА 1988: Build v16.12.6 // SanderElr</div>
     </div>
   </div>
 
@@ -124,7 +129,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
   <script src="world.js"></script>
-  <script src="chat.js"></script>
+  <script src="radio.js"></script> <script src="chat.js"></script>
   <script src="recipes.js"></script>
 
   <script>
@@ -142,7 +147,11 @@
       const loc = window.WORLD[S.loc] || window.WORLD.home;
       $('cur-loc-name').textContent = loc.n;
       
-      // Обновление изображения локации
+      // ОБНОВЛЕНИЕ РАДИО (берем сообщение из radio.js)
+      if (window.getRandomRadioMessage) {
+          $('radio-display').textContent = window.getRandomRadioMessage();
+      }
+      
       $('loc-img').style.backgroundImage = `url('${loc.img || ""}')`;
       
       $('stats').innerHTML = [
@@ -167,7 +176,7 @@
       else if(a==='fish') { S.fish++; log("🐟 Выловил что-то съедобное."); }
       else if(a==='get_water') { S.water_res++; log("💧 Набрал мутной воды."); }
       else if(a==='scavenge_tech') { if(Math.random()>0.5){S.batteries++; log("🔋 Нашел старую батарейку.");} else log("⚙️ Среди обломков ничего ценного."); }
-      else if(a==='radio') { if(S.batteries>0){S.batteries--; log("📻 Сквозь треск слышны голоса...");} else log("🔋 Питание отсутствует."); }
+      else if(a==='radio') { if(S.batteries>0){S.batteries--; log("📻 Настроил приемник на новую волну...");} else log("🔋 Питание отсутствует."); }
       S.food=Math.max(0, S.food-5); S.energy=Math.max(0, S.energy-2); ui(); save();
     }
 
