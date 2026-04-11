@@ -2,22 +2,30 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>ЗОНА 1988: v16.12.2</title>
+  <title>ЗОНА 1988: v16.12.3 (Modular)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/SanderElr/vptest/main/favicon.png">
   <style>
     body{background:#0a0a0a;color:#d4c4a8;font-family:monospace;margin:0;padding:10px;display:flex;justify-content:center}
     .container{display:grid;grid-template-columns:320px 1fr;gap:15px;max-width:1300px;width:100%}
     .sidebar{display:flex;flex-direction:column;gap:10px;height:95vh}
+    
+    /* АВТОРИЗАЦИЯ И НИКНЕЙМ */
     #auth-container { background: #1a1a1a; border: 1px solid #444; padding: 12px; }
     #user-info { display: none; margin-top: 10px; }
     #nick-input { background: #000; border: 1px solid #444; color: #6f6; width: 100%; padding: 5px; font-family: monospace; outline: none; }
+    
+    /* ЧАТ */
     .chat-box { background: #000; border: 1px solid #333; display: flex; flex-direction: column; flex: 1; min-height: 350px; overflow: hidden; }
     #chat-messages { flex: 1; overflow-y: auto; font-size: 12px; padding: 10px; border-bottom: 1px solid #222; background: #050505;}
     .chat-msg { margin-bottom: 8px; border-bottom: 1px solid #111; padding: 6px; word-break: break-word; }
-    .chat-msg-mention { background: #1a2a1a !important; border-left: 3px solid #6f6; } 
+    
+    /* НОВЫЕ СТИЛИ ВЫДЕЛЕНИЯ ЧАТА */
     .chat-name { color: #fd6; font-weight: bold; cursor: pointer; text-decoration: underline dotted; }
-    .chat-name-self { color: #6f6 !important; font-weight: bold; cursor: pointer; }
+    .chat-name-self { color: #00ff00 !important; font-weight: bold; cursor: pointer; }
+    .chat-msg-highlight { background: #1a1a1a !important; border-left: 3px solid #00ff00; }
+    .chat-msg-mention-alt { border-left-color: #fd6; }
+
     .chat-input-row { display: flex; background: #111; height: 40px; }
     #chat-input { background: #000; border: none; color: #6f6; flex: 1; padding: 0 10px; font-family: monospace; outline: none; }
     #chat-send { background: #222; border: none; color: #6f6; width: 50px; cursor: pointer; }
@@ -28,6 +36,7 @@
     .archive-header { padding: 15px; background: #222; border-bottom: 1px solid #444; display: flex; justify-content: space-between; align-items: center; }
     #archive-list { flex-grow: 1; overflow-y: auto; padding: 20px; font-size: 13px; color: #ccc; }
 
+    /* ИГРОВАЯ ПАНЕЛЬ */
     .game-panel { background: #111; padding: 20px; border: 1px solid #444; overflow-y: auto; height: 95vh; box-sizing: border-box; }
     .loc-header { background: #222; padding: 15px; border: 1px solid #444; text-align: center; margin-bottom: 15px; border-left: 5px solid #f44; }
     .loc-name { font-size: 20px; color: #fff; font-weight: bold; text-transform: uppercase; }
@@ -39,6 +48,7 @@
     .title { color: #555; border-bottom: 1px solid #333; margin: 25px 0 10px; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; }
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .inv-inline { background: #0a0a0a; padding: 10px; border: 1px solid #222; font-size: 12px; margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 12px; color: #6f6; min-height: 40px;}
+    
     button { background: #1a1a1a; color: #d4c4a8; border: 1px solid #444; padding: 12px; cursor: pointer; font-family: monospace; text-align: left; }
     button:hover:not(:disabled) { background: #252525; border-color: #6f6; }
     button:disabled { opacity: 0.3; cursor: not-allowed; }
@@ -81,7 +91,7 @@
       <div class="title">💊 МЕДИЦИНА</div>
       <div id="med-actions" class="grid-2"></div>
       <button style="width:100%; margin-top:40px; background:#300; color:#f66; border:1px solid #600; text-align:center" onclick="resetGame()">[ НАЧАТЬ ЗАНОВО ]</button>
-      <div class="version-footer">ЗОНА 1988: Build v16.12.2 // SanderElr</div>
+      <div class="version-footer">ЗОНА 1988: Build v16.12.3 // SanderElr</div>
     </div>
   </div>
 
@@ -99,9 +109,12 @@
   <script>
     const firebaseConfig = { apiKey: "AIzaSyBeCXQduKrz67Cs1SnqFFEktxAaaYNfFho", authDomain: "vptest1-6a89d.firebaseapp.com", projectId: "vptest1-6a89d", appId: "1:452937918921:web:739b70ad20075896a1e018" };
     firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth(), db = firebase.firestore();
-    const $ = id => document.getElementById(id);
-    let currentUser = null, S = null, chatUnsub = null;
+    
+    window.auth = firebase.auth();
+    window.db = firebase.firestore();
+    window.$ = id => document.getElementById(id);
+    window.currentUser = null;
+    window.S = null;
 
     const WORLD = {
       home: { n:'🏠 Убежище', acts: { 'rest': '💤 Сон', 'radio': '📻 Радио' } },
@@ -112,20 +125,22 @@
       swamp: { n:'🍄 Болото', acts: { 'get_water': '💧 Набрать воды' } }
     };
 
-    function ui() {
+    window.ui = function() {
       if(!S) return;
       const loc = WORLD[S.loc] || WORLD.home;
       $('cur-loc-name').textContent = loc.n;
       $('stats').innerHTML = [['❤️', S.hp], ['🍞', S.food], ['💧', S.water], ['⚡', S.energy], ['☢️', S.rad], ['📅', S.day]].map(s=>`<div class="s-item"><span>${s[0]}</span><span class="s-val">${s[1]}</span></div>`).join('');
       const invItems = [['fish','🐟'],['wood','🪵'],['rags','🧵'],['water_res','💧'],['batteries','🔋']];
       $('inventory').innerHTML = invItems.map(i=>S[i[0]]>0?`<span>${i[1]} ${S[i[0]]}</span>`:'').join(' ');
+      
       $('local-actions').innerHTML = Object.entries(loc.acts).map(([id, n])=>`<button onclick="doAction('${id}')">${n}</button>`).join('');
       $('move-actions').innerHTML = Object.keys(WORLD).map(id=>`<button ${id===S.loc?'disabled':''} onclick="moveTo('${id}')">${WORLD[id].n}</button>`).join('');
+      
       $('cook-actions').innerHTML = `<button onclick="craft('fish')">Жарить рыбу (1🐟 1🪵)</button>`;
       $('med-actions').innerHTML = `<button onclick="craft('med')">Стерильный бинт (2🧵 1💧)</button>`;
     }
 
-    function doAction(a) {
+    window.doAction = function(a) {
       if(a==='rest') { S.day++; S.hp=Math.min(100, S.hp+20); S.energy=100; log("💤 Отдохнул."); }
       else if(a==='scavenge_rags') { S.rags++; log("🧵 Нашел тряпки."); }
       else if(a==='get_wood') { S.wood+=2; log("🪵 Собрал дрова."); }
@@ -136,20 +151,16 @@
       S.food=Math.max(0, S.food-5); S.energy=Math.max(0, S.energy-2); ui(); save();
     }
 
-    function moveTo(id) { 
+    window.moveTo = function(id) { 
       if(S.energy < 10) { log("⚡ Нет сил идти.", "bad"); return; }
       S.loc=id; S.energy-=10; log(`➡️ Переход: ${WORLD[id].n}`); ui(); save(); 
     }
 
-    function craft(type) {
-        if(type==='fish' && S.fish>=1 && S.wood>=1) { S.fish--; S.wood--; S.food=Math.min(100, S.food+40); log("🍳 Рыба готова!"); }
-        else if(type==='med' && S.rags>=2 && S.water_res>=1) { S.rags-=2; S.water_res--; S.hp=Math.min(100, S.hp+30); log("💊 Перевязал раны."); }
-        else { log("🚫 Не хватает ресурсов!", "bad"); }
-        ui(); save();
-    }
+    window.log = function(m, t='') { $('log').insertAdjacentHTML('afterbegin', `<div class="${t}">[День ${S.day}] ${m}</div>`); }
+    window.save = function() { if(currentUser && S) db.collection('survival_v12').doc(currentUser.uid).set({S}); }
 
-    function log(m, t='') { $('log').insertAdjacentHTML('afterbegin', `<div class="${t}">[День ${S.day}] ${m}</div>`); }
-    function save() { if(currentUser && S) db.collection('survival_v12').doc(currentUser.uid).set({S}); }
+    function init() { S={day:1,hp:100,food:80,water:80,energy:100,rad:0,psy:100,loc:'home',fish:0,wood:5,rags:2,water_res:1,batteries:1}; }
+    window.resetGame = function() { if(confirm("Начать заново?")) { init(); ui(); save(); } }
 
     auth.onAuthStateChanged(user => {
       if(user) {
@@ -157,45 +168,17 @@
         const n = localStorage.getItem('zone_nick'); if(n) $('nick-input').value = n;
         db.collection('survival_v12').doc(user.uid).get().then(d => {
           if(d.exists) { S=d.data().S; } else { init(); }
-          ui(); startChat();
+          ui(); 
+          if(typeof startChat === "function") startChat();
         });
       }
     });
 
-    function init() { S={day:1,hp:100,food:80,water:80,energy:100,rad:0,psy:100,loc:'home',fish:0,wood:5,rags:2,water_res:1,batteries:1}; }
-    function resetGame() { if(confirm("Начать заново?")) { init(); ui(); save(); } }
-
     $('login-btn').onclick = () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
-    $('chat-send').onclick = send;
-    $('chat-input').onkeypress = e => { if(e.key==='Enter') send(); };
-
-    function startChat() {
-      if(chatUnsub) chatUnsub();
-      chatUnsub = db.collection('messages').orderBy('createdAt', 'asc').limitToLast(25).onSnapshot(snap => {
-        const myNick = $('nick-input').value.trim();
-        $('chat-messages').innerHTML = '';
-        snap.forEach(doc => {
-          const m = doc.data(); if(!m.name) return;
-          const isM = myNick && m.text.includes(`@${myNick}`);
-          $('chat-messages').innerHTML += `<div class="chat-msg ${isM?'chat-msg-mention':''}"><span class="${m.name===myNick?'chat-name-self':'chat-name'}" onclick="mention('${m.name}')">${m.name}:</span> <span>${m.text}</span></div>`;
-        });
-        $('chat-messages').scrollTop = $('chat-messages').scrollHeight;
-      });
-    }
-
-    function send(){ const t=$('chat-input').value.trim(), n=$('nick-input').value.trim()||currentUser.displayName.split(' ')[0]; if(t && currentUser){ db.collection('messages').add({name:n,text:t,createdAt:firebase.firestore.FieldValue.serverTimestamp()}); $('chat-input').value=''; }}
-    function mention(name) { const i = $('chat-input'); i.value = `@${name}, ${i.value}`; i.focus(); }
-
-    function openArchive() {
-      $('archive-modal').style.display = 'block';
-      db.collection('messages').orderBy('createdAt', 'desc').limit(100).get().then(snap => {
-        $('archive-list').innerHTML = snap.docs.map(doc => {
-          const m = doc.data();
-          return `<div style="margin-bottom:5px; border-bottom:1px solid #222; padding:3px;"><strong>${m.name}:</strong> ${m.text}</div>`;
-        }).join('');
-      });
-    }
-    function closeArchive() { $('archive-modal').style.display = 'none'; }
   </script>
+
+  <script src="chat.js"></script>
+  <script src="recipes.js"></script>
+
 </body>
 </html>
